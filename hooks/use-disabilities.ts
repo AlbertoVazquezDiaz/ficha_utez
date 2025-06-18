@@ -58,7 +58,10 @@ export function useDisabilities(): UseDisabilitiesReturn {
       setError(null)
       setIsUsingFallback(false)
 
-      const fullUrl = `${API_BASE_URL}/disabilities`
+      // const fullUrl = `${API_BASE_URL}/disabilities`
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.0.101:8080/api/fichas-utez"
+      const fullUrl = `${baseUrl}/disabilities`
+
       console.log("🔄 Fetching disabilities from:", fullUrl)
 
       // Add timeout and better fetch configuration
