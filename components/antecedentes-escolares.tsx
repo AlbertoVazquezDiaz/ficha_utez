@@ -12,112 +12,74 @@ import { Button } from "@/components/ui/button"
 import { Check, ChevronDown, HelpCircle } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { fetchEstadosMexico, fetchMunicipiosPorEstado, fetchTiposPrepa, Estado, Municipio, TipoPrepa } from "@/lib/api-estados"
 
 interface AntecedentesEscolaresProps {
   data: any
   onChange: (data: any) => void
 }
 
-const tiposPrepa = [
-  "Bachillerato General",
-  "Bachillerato Tecnológico",
-  "Preparatoria Abierta",
-  "CONALEP",
-  "CECYTE",
-  "CBTIS",
-  "CBTA",
-  "CETis",
-  "Preparatoria Particular",
-  "Telebachillerato",
-  "Otra",
-]
-
-const preparatorias: Record<string, string[]> = {
-  "Bachillerato General": [
-    "Preparatoria Federal Lázaro Cárdenas",
-    "Preparatoria Oficial No. 1",
-    "Preparatoria Oficial No. 2",
-    "Preparatoria Oficial No. 3",
-  ],
-  "Bachillerato Tecnológico": ["CBTis No. 1", "CBTis No. 2", "CBTa No. 1", "CETis No. 1"],
-  CONALEP: ["CONALEP Cuernavaca", "CONALEP Cuautla", "CONALEP Jojutla"],
-  CECYTE: ["CECYTE Emiliano Zapata", "CECYTE Temixco", "CECYTE Yautepec"],
-}
-
-const estadosMexico = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Ciudad de México",
-  "Coahuila",
-  "Colima",
-  "Durango",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "México",
-  "Michoacán",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz",
-  "Yucatán",
-  "Zacatecas",
-]
-
-const municipiosMorelos = [
-  "Amacuzac",
-  "Atlatlahucan",
-  "Axochiapan",
-  "Ayala",
-  "Coatlán del Río",
-  "Cuautla",
-  "Cuernavaca",
-  "Emiliano Zapata",
-  "Huitzilac",
-  "Jantetelco",
-  "Jiutepec",
-  "Jojutla",
-  "Jonacatepec de Leandro Valle",
-  "Mazatepec",
-  "Miacatlán",
-  "Ocuituco",
-  "Puente de Ixtla",
-  "Temixco",
-  "Tepalcingo",
-  "Tepoztlán",
-  "Tetecala",
-  "Tetela del Volcán",
-  "Tlalnepantla",
-  "Tlaltizapán de Zapata",
-  "Tlaquiltenango",
-  "Tlayacapan",
-  "Totolapan",
-  "Xochitepec",
-  "Yautepec",
-  "Yecapixtla",
-  "Zacatepec",
-  "Zacualpan de Amilpas",
-]
-
 export default function AntecedentesEscolaresComponent({ data, onChange }: AntecedentesEscolaresProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [openTipoPrepa, setOpenTipoPrepa] = useState(false)
   const [openNombrePrepa, setOpenNombrePrepa] = useState(false)
+  const [estados, setEstados] = useState<Estado[]>([])
+  const [loadingEstados, setLoadingEstados] = useState(false)
+  const [errorEstados, setErrorEstados] = useState<string | null>(null)
+  const [municipios, setMunicipios] = useState<Municipio[]>([])
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false)
+  const [errorMunicipios, setErrorMunicipios] = useState<string | null>(null)
+  const [tiposPrepa, setTiposPrepa] = useState<TipoPrepa[]>([])
+  const [loadingTiposPrepa, setLoadingTiposPrepa] = useState(false)
+  const [errorTiposPrepa, setErrorTiposPrepa] = useState<string | null>(null)
+
+  // Cargar estados al montar
+  useEffect(() => {
+    setLoadingEstados(true)
+    fetchEstadosMexico()
+      .then((estados) => {
+        setEstados(estados)
+        setLoadingEstados(false)
+      })
+      .catch((err) => {
+        setErrorEstados("No se pudieron cargar los estados")
+        setLoadingEstados(false)
+      })
+  }, [])
+
+  // Cargar municipios cuando cambia el estado
+  useEffect(() => {
+    const estadoObj = estados.find((e) => e.name === data.estado)
+    if (estadoObj) {
+      setLoadingMunicipios(true)
+      setMunicipios([])
+      fetchMunicipiosPorEstado(estadoObj.id)
+        .then((municipios) => {
+          setMunicipios(municipios)
+          setLoadingMunicipios(false)
+        })
+        .catch(() => {
+          setErrorMunicipios("No se pudieron cargar los municipios")
+          setLoadingMunicipios(false)
+        })
+    } else {
+      setMunicipios([])
+    }
+  }, [data.estado, estados])
+
+  // Cargar tipos de preparatoria al montar
+  useEffect(() => {
+    setLoadingTiposPrepa(true)
+    fetchTiposPrepa()
+      .then((tipos) => {
+        setTiposPrepa(tipos)
+        setLoadingTiposPrepa(false)
+      })
+      .catch(() => {
+        setErrorTiposPrepa("No se pudieron cargar los tipos de preparatoria")
+        setLoadingTiposPrepa(false)
+      })
+  }, [])
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors }
@@ -161,12 +123,12 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
 
   // Limpiar nombre de prepa cuando cambia el tipo
   useEffect(() => {
-    if (data.tipoPrepa && data.tipoPrepa !== "Otra") {
+    if (data.tipoPrepa && data.tipoPrepa !== "Otra" && (data.nombrePrepa !== "" || data.tipoPrepaOtra !== "")) {
       onChange({ ...data, nombrePrepa: "", tipoPrepaOtra: "" })
     }
-  }, [data])
-
-  const availablePreparatorias = data.tipoPrepa && preparatorias[data.tipoPrepa] ? preparatorias[data.tipoPrepa] : []
+    // Solo depende de tipoPrepa
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.tipoPrepa])
 
   return (
     <Card>
@@ -188,28 +150,53 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
                 aria-expanded={openTipoPrepa}
                 className={cn("w-full justify-between", data.tipoPrepa ? "border-green-500" : "")}
               >
-                {data.tipoPrepa || "Selecciona el tipo de preparatoria"}
+                {data.tipoPrepa || (loadingTiposPrepa ? "Cargando..." : "Selecciona el tipo de preparatoria")}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0" align="start">
-              <Command>
+              <Command shouldFilter={false}>
                 <CommandInput placeholder="Buscar tipo de preparatoria..." />
                 <CommandList>
                   <CommandEmpty>No se encontraron resultados.</CommandEmpty>
                   <CommandGroup>
-                    {tiposPrepa.map((tipo) => (
-                      <CommandItem
-                        key={tipo}
-                        onSelect={() => {
-                          onChange({ ...data, tipoPrepa: tipo })
-                          setOpenTipoPrepa(false)
-                        }}
-                      >
-                        <Check className={cn("mr-2 h-4 w-4", data.tipoPrepa === tipo ? "opacity-100" : "opacity-0")} />
-                        {tipo}
-                      </CommandItem>
-                    ))}
+                    {errorTiposPrepa && <CommandItem disabled>{errorTiposPrepa}</CommandItem>}
+                    {tiposPrepa
+                      .filter(tipo => {
+                        // Si hay texto en el input, filtra por coincidencia, si no, muestra todos
+                        const input = document.querySelector('[placeholder="Buscar tipo de preparatoria..."]') as HTMLInputElement | null;
+                        if (input && input.value) {
+                          return tipo.name.toLowerCase().includes(input.value.toLowerCase()) || (tipo.abrevation && tipo.abrevation.toLowerCase().includes(input.value.toLowerCase()));
+                        }
+                        return true;
+                      })
+                      .map((tipo) => (
+                        <CommandItem
+                          key={tipo.id}
+                          onSelect={() => {
+                            onChange({ ...data, tipoPrepa: tipo.name })
+                            setOpenTipoPrepa(false)
+                          }}
+                          value={tipo.name}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", data.tipoPrepa === tipo.name ? "opacity-100" : "opacity-0")} />
+                          {tipo.name}
+                          {tipo.abrevation && (
+                            <span className="ml-2 text-xs text-gray-400">({tipo.abrevation})</span>
+                          )}
+                        </CommandItem>
+                      ))}
+                    <CommandItem
+                      key="Otra"
+                      onSelect={() => {
+                        onChange({ ...data, tipoPrepa: "Otra" })
+                        setOpenTipoPrepa(false)
+                      }}
+                      value="Otra"
+                    >
+                      <Check className={cn("mr-2 h-4 w-4", data.tipoPrepa === "Otra" ? "opacity-100" : "opacity-0")} />
+                      Otra
+                    </CommandItem>
                   </CommandGroup>
                 </CommandList>
               </Command>
@@ -233,45 +220,14 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
         {/* Nombre de la preparatoria */}
         <div className="space-y-2">
           <Label>Nombre de la Preparatoria *</Label>
-          {availablePreparatorias.length > 0 ? (
-            <Popover open={openNombrePrepa} onOpenChange={setOpenNombrePrepa}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openNombrePrepa}
-                  className={cn("w-full justify-between", data.nombrePrepa ? "border-green-500" : "")}
-                  disabled={!data.tipoPrepa || data.tipoPrepa === "Otra"}
-                >
-                  {data.nombrePrepa || "Selecciona la preparatoria"}
-                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Buscar preparatoria..." />
-                  <CommandList>
-                    <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-                    <CommandGroup>
-                      {availablePreparatorias.map((prepa) => (
-                        <CommandItem
-                          key={prepa}
-                          onSelect={() => {
-                            onChange({ ...data, nombrePrepa: prepa })
-                            setOpenNombrePrepa(false)
-                          }}
-                        >
-                          <Check
-                            className={cn("mr-2 h-4 w-4", data.nombrePrepa === prepa ? "opacity-100" : "opacity-0")}
-                          />
-                          {prepa}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+          {data.tipoPrepa && data.tipoPrepa !== "Otra" ? (
+            <Input
+              value={data.nombrePrepa || ""}
+              onChange={(e) => onChange({ ...data, nombrePrepa: e.target.value })}
+              className={cn("transition-colors", data.nombrePrepa ? "border-green-500" : "")}
+              placeholder="Nombre completo de la preparatoria"
+              disabled={!data.tipoPrepa}
+            />
           ) : (
             <Input
               value={data.nombrePrepa || ""}
@@ -336,13 +292,14 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
                 onChange({ ...data, estado: value, municipio: "", estadoOtro: "", municipioOtro: "" })
               }
             >
-              <SelectTrigger className={cn("transition-colors", data.estado ? "border-green-500" : "")}>
-                <SelectValue placeholder="Selecciona el estado" />
+              <SelectTrigger className={cn("transition-colors", data.estado ? "border-green-500" : "")}> 
+                <SelectValue placeholder={loadingEstados ? "Cargando..." : "Selecciona el estado"} />
               </SelectTrigger>
               <SelectContent>
-                {estadosMexico.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
-                    {estado}
+                {errorEstados && <SelectItem value="" disabled>{errorEstados}</SelectItem>}
+                {estados.map((estado) => (
+                  <SelectItem key={estado.id} value={estado.name}>
+                    {estado.name}
                   </SelectItem>
                 ))}
                 <SelectItem value="otro">Otro</SelectItem>
@@ -368,25 +325,30 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
             <Select
               value={data.municipio || ""}
               onValueChange={(value) => onChange({ ...data, municipio: value, municipioOtro: "" })}
-              disabled={!data.estado}
+              disabled={!data.estado || loadingMunicipios}
             >
-              <SelectTrigger className={cn("transition-colors", data.municipio ? "border-green-500" : "")}>
-                <SelectValue placeholder="Selecciona el municipio" />
+              <SelectTrigger className={cn("transition-colors", data.municipio ? "border-green-500" : "")}> 
+                <SelectValue placeholder={loadingMunicipios ? "Cargando..." : "Selecciona el municipio"} />
               </SelectTrigger>
               <SelectContent>
-                {data.estado === "Morelos" ? (
-                  municipiosMorelos.map((municipio) => (
-                    <SelectItem key={municipio} value={municipio}>
-                      {municipio}
-                    </SelectItem>
-                  ))
+                {errorMunicipios && municipios.length === 0 ? (
+                  <SelectItem value="error" disabled>{errorMunicipios}</SelectItem>
                 ) : (
-                  <SelectItem value="otro">Otro</SelectItem>
+                  <>
+                    {municipios
+                      .filter((municipio) => municipio && municipio.name && municipio.name.trim() !== "")
+                      .map((municipio) => (
+                        <SelectItem key={municipio.id} value={municipio.name}>
+                          {municipio.name}
+                        </SelectItem>
+                      ))}
+                    <SelectItem value="otro">Otro</SelectItem>
+                  </>
                 )}
               </SelectContent>
             </Select>
 
-            {(data.municipio === "otro" || (data.estado && data.estado !== "Morelos" && data.estado !== "otro")) && (
+            {data.municipio === "otro" && (
               <div className="space-y-2">
                 <Label htmlFor="municipioOtro">Especifica el municipio *</Label>
                 <Input
