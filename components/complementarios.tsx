@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,34 +12,16 @@ import { Check, ChevronDown, X, RefreshCw, Wifi, WifiOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDisabilities } from "../hooks/use-disabilities"
 
+if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  console.error("❌ Error: NEXT_PUBLIC_API_BASE_URL environment variable is not defined")
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
 interface ComplementariosProps {
   data: any
   onChange: (data: any) => void
 }
-
-const lenguasIndigenas = [
-  "Ninguna",
-  "Náhuatl",
-  "Maya",
-  "Zapoteco",
-  "Mixteco",
-  "Otomí",
-  "Totonaco",
-  "Tzotzil",
-  "Tzeltal",
-  "Mazahua",
-  "Huichol",
-  "Chinanteco",
-  "Purépecha",
-  "Mixe",
-  "Tlapaneco",
-  "Tarahumara",
-  "Zoque",
-  "Chol",
-  "Huasteco",
-  "Tepehuano",
-  "Otro o varias",
-]
 
 interface MultiSelectProps {
   options: string[]
@@ -63,6 +45,7 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
         onSelectionChange([...newSelected, option])
       }
     }
+    setOpen(true) // Keep the popover open after selection
   }
 
   const removeItem = (item: string) => {
@@ -108,10 +91,14 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
               <CommandEmpty>No se encontraron opciones.</CommandEmpty>
               <CommandGroup>
                 {options.map((option) => (
-                  <CommandItem key={option} onSelect={() => handleSelect(option)}>
+                  <div 
+                    key={option}
+                    onClick={() => handleSelect(option)}
+                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                  >
                     <Check className={cn("mr-2 h-4 w-4", selected.includes(option) ? "opacity-100" : "opacity-0")} />
                     {option}
-                  </CommandItem>
+                  </div>
                 ))}
               </CommandGroup>
             </CommandList>
@@ -149,6 +136,7 @@ function DisabilityMultiSelect({
         onSelectionChange([...newSelected, disabilityName])
       }
     }
+    setOpen(true) // Keep the popover open after selection
   }
 
   const removeItem = (item: string) => {
@@ -237,12 +225,16 @@ function DisabilityMultiSelect({
               <CommandEmpty>{loading ? "Cargando..." : "No se encontraron opciones."}</CommandEmpty>
               <CommandGroup>
                 {disabilities.map((disability) => (
-                  <CommandItem key={disability.id} onSelect={() => handleSelect(disability.nombre)}>
+                  <div 
+                    key={disability.id}
+                    onClick={() => handleSelect(disability.nombre)}
+                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                  >
                     <Check
                       className={cn("mr-2 h-4 w-4", selected.includes(disability.nombre) ? "opacity-100" : "opacity-0")}
                     />
                     {disability.nombre}
-                  </CommandItem>
+                  </div>
                 ))}
               </CommandGroup>
             </CommandList>
@@ -254,6 +246,49 @@ function DisabilityMultiSelect({
 }
 
 export default function ComplementariosComponent({ data, onChange }: ComplementariosProps) {
+  const [lenguasIndigenasAPI, setLenguasIndigenasAPI] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchLenguasIndigenas = async () => {
+      try {
+        if (!API_BASE_URL) {
+          throw new Error("La URL base de la API no está configurada. Verifica la variable de entorno NEXT_PUBLIC_API_BASE_URL.")
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/indigenous-languages`)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+
+        const data = await response.json()
+        
+        // Validar que la respuesta sea un array
+        if (!Array.isArray(data)) {
+          throw new Error("La respuesta de la API no es un array válido")
+        }
+
+        // Validar y transformar cada elemento del array
+        const languages = data.map((item, index) => {
+          if (!item || typeof item !== "object" || !item.name) {
+            throw new Error(`Elemento inválido en el índice ${index}: falta la propiedad 'name'`)
+          }
+          return item.name
+        })
+
+        setLenguasIndigenasAPI(['Ninguna', ...languages, 'Otro o varias'])
+        setLoading(false)
+      } catch (err) {
+        console.error("❌ Error fetching indigenous languages:", err)
+        setError(err instanceof Error ? err.message : 'Error al cargar las lenguas indígenas')
+        setLoading(false)
+      }
+    }
+
+    fetchLenguasIndigenas()
+  }, [])
+
   const handleDiscapacidadesChange = (selected: string[]) => {
     onChange({
       ...data,
@@ -314,13 +349,22 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
         {/* Lenguas indígenas de los padres */}
         <div className="space-y-3">
           <Label>¿Qué lenguas indígenas hablan tus padres?</Label>
-          <MultiSelect
-            options={lenguasIndigenas}
-            selected={data.lenguasIndigenasPadres || []}
-            onSelectionChange={handleLenguasPadresChange}
-            placeholder="Selecciona las lenguas que apliquen"
-            searchPlaceholder="Buscar lengua indígena..."
-          />
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span>Cargando lenguas indígenas...</span>
+            </div>
+          ) : error ? (
+            <div className="text-[#c0392b] text-sm">{error}</div>
+          ) : (
+            <MultiSelect
+              options={lenguasIndigenasAPI}
+              selected={data.lenguasIndigenasPadres || []}
+              onSelectionChange={handleLenguasPadresChange}
+              placeholder="Selecciona las lenguas que apliquen"
+              searchPlaceholder="Buscar lengua indígena..."
+            />
+          )}
 
           {data.lenguasIndigenasPadres?.includes("Otro o varias") && (
             <div className="space-y-2">
@@ -342,13 +386,22 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
         {/* Lenguas indígenas personales */}
         <div className="space-y-3">
           <Label>¿Hablas alguna lengua indígena?</Label>
-          <MultiSelect
-            options={lenguasIndigenas}
-            selected={data.lenguasIndigenasPersonales || []}
-            onSelectionChange={handleLenguasPersonalesChange}
-            placeholder="Selecciona las lenguas que hablas"
-            searchPlaceholder="Buscar lengua indígena..."
-          />
+          {loading ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              <span>Cargando lenguas indígenas...</span>
+            </div>
+          ) : error ? (
+            <div className="text-[#c0392b] text-sm">{error}</div>
+          ) : (
+            <MultiSelect
+              options={lenguasIndigenasAPI}
+              selected={data.lenguasIndigenasPersonales || []}
+              onSelectionChange={handleLenguasPersonalesChange}
+              placeholder="Selecciona las lenguas que hablas"
+              searchPlaceholder="Buscar lengua indígena..."
+            />
+          )}
 
           {data.lenguasIndigenasPersonales?.includes("Otro o varias") && (
             <div className="space-y-2">

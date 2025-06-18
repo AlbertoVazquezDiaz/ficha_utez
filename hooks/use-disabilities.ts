@@ -7,6 +7,15 @@ interface Disability {
   nombre: string
 }
 
+interface ApiResponse {
+  code: number
+  message: string
+  data: Array<{
+    id: number
+    name: string
+  }>
+}
+
 interface UseDisabilitiesReturn {
   disabilities: Disability[]
   loading: boolean
@@ -27,6 +36,12 @@ const fallbackDisabilities: Disability[] = [
   { id: 8, nombre: "Otro" },
 ]
 
+if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  console.error("❌ Error: NEXT_PUBLIC_API_BASE_URL environment variable is not defined")
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
 export function useDisabilities(): UseDisabilitiesReturn {
   const [disabilities, setDisabilities] = useState<Disability[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,13 +50,15 @@ export function useDisabilities(): UseDisabilitiesReturn {
 
   const fetchDisabilities = async () => {
     try {
+      if (!API_BASE_URL) {
+        throw new Error("La URL base de la API no está configurada. Verifica la variable de entorno NEXT_PUBLIC_API_BASE_URL.")
+      }
+
       setLoading(true)
       setError(null)
       setIsUsingFallback(false)
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.106.24:8080/api/fichas-utez"
-      const fullUrl = `${baseUrl}/disabilities`
-
+      const fullUrl = `${API_BASE_URL}/disabilities`
       console.log("🔄 Fetching disabilities from:", fullUrl)
 
       // Add timeout and better fetch configuration
@@ -55,7 +72,6 @@ export function useDisabilities(): UseDisabilitiesReturn {
           Accept: "application/json",
         },
         signal: controller.signal,
-        // Add mode if CORS is an issue
         mode: "cors",
       })
 
@@ -68,22 +84,30 @@ export function useDisabilities(): UseDisabilitiesReturn {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
-      const data = await response.json()
-      console.log("✅ Disabilities data received:", data)
+      const apiResponse = await response.json() as ApiResponse
+      console.log("✅ API Response received:", apiResponse)
 
       // Validate data structure
-      if (!Array.isArray(data)) {
-        throw new Error("La respuesta de la API no es un array válido")
+      if (!apiResponse.data || !Array.isArray(apiResponse.data)) {
+        throw new Error("La respuesta de la API no contiene un array válido en la propiedad 'data'")
       }
 
-      // Ensure each item has the expected structure
-      const validatedData = data.map((item, index) => {
-        if (typeof item !== "object" || !item.nombre) {
+      // Transform and validate each item
+      const validatedData = apiResponse.data.map((item, index) => {
+        if (!item || typeof item !== "object" || !item.name) {
           console.warn(`⚠️ Invalid disability item at index ${index}:`, item)
-          return { id: item.id || index, nombre: item.nombre || item.name || `Opción ${index + 1}` }
+          throw new Error(`Elemento inválido en el índice ${index}: falta la propiedad 'name'`)
         }
-        return { id: item.id || index, nombre: item.nombre }
+        return {
+          id: item.id || index,
+          nombre: item.name // Map 'name' to 'nombre' for frontend
+        }
       })
+
+      // Add "Ninguna" option if it doesn't exist
+      if (!validatedData.some(item => item.nombre === "Ninguna")) {
+        validatedData.unshift({ id: 0, nombre: "Ninguna" })
+      }
 
       setDisabilities(validatedData)
       console.log("✅ Disabilities loaded successfully:", validatedData.length, "items")

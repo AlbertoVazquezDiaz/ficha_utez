@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select"
+import { useDisabilities } from "@/hooks/use-disabilities"
 
 interface DatosGeneralesProps {
   data: any
@@ -104,6 +106,57 @@ const idiomas = [
 
 export default function DatosGeneralesComponent({ data, onChange }: DatosGeneralesProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Estados para datos dinámicos
+  const [nacionalidades, setNacionalidades] = useState<{ id: number; name: string }[]>([])
+  const [estados, setEstados] = useState<{ id: number; name: string }[]>([])
+  const [municipios, setMunicipios] = useState<{ id: number; name: string }[]>([])
+  const [estadosCiviles, setEstadosCiviles] = useState<{ id: number; name: string }[]>([])
+  const [lenguasNatales, setLenguasNatales] = useState<{ id: number; name: string }[]>([])
+
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.0.101:8080/api/fichas-utez"
+
+  // Fetch inicial de catálogos
+  useEffect(() => {
+    fetch(`${API_BASE}/nationalities`)
+      .then(res => res.json())
+      .then(json => {
+        if (!json.data || !Array.isArray(json.data)) {
+          throw new Error("La respuesta no contiene un array válido en data")
+        }
+        setNacionalidades(json.data)
+      })
+      .catch(() => setNacionalidades([]))
+    fetch(`${API_BASE}/states/country/1`)
+      .then(res => res.json())
+      .then(setEstados)
+      .catch(() => setEstados([]))
+    fetch(`${API_BASE}/api/civil-status`)
+      .then(res => res.json())
+      .then(setEstadosCiviles)
+      .catch(() => setEstadosCiviles([]))
+    fetch(`${API_BASE}/api/native-languages`)
+      .then(res => res.json())
+      .then(setLenguasNatales)
+      .catch(() => setLenguasNatales([]))
+  }, [API_BASE])
+
+  // Fetch de municipios cuando cambia el estado
+  useEffect(() => {
+    if (data.estadoNacimiento) {
+      const estadoObj = estados.find(e => e.name === data.estadoNacimiento)
+      if (estadoObj) {
+        fetch(`${API_BASE}/municipalities/state/${estadoObj.id}`)
+          .then(res => res.json())
+          .then(setMunicipios)
+          .catch(() => setMunicipios([]))
+      } else {
+        setMunicipios([])
+      }
+    } else {
+      setMunicipios([])
+    }
+  }, [data.estadoNacimiento, estados, API_BASE])
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors }
@@ -351,8 +404,13 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                 <SelectValue placeholder="Selecciona tu nacionalidad" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="mexicana">Mexicana</SelectItem>
-                <SelectItem value="extranjera">Extranjera</SelectItem>
+                {nacionalidades.length > 0 ? (
+                  nacionalidades.map((n) => (
+                    <SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-data" disabled>No hay nacionalidades</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -369,11 +427,13 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                     <SelectValue placeholder="Selecciona el estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    {estadosMexico.map((estado) => (
-                      <SelectItem key={estado} value={estado}>
-                        {estado}
-                      </SelectItem>
-                    ))}
+                    {estados.length > 0 ? (
+                      estados.map((estado) => (
+                        <SelectItem key={estado.id} value={estado.name}>{estado.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-data" disabled>No hay estados</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -389,14 +449,12 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                     <SelectValue placeholder="Selecciona el municipio" />
                   </SelectTrigger>
                   <SelectContent>
-                    {data.estadoNacimiento === "Morelos" ? (
-                      municipiosMorelos.map((municipio) => (
-                        <SelectItem key={municipio} value={municipio}>
-                          {municipio}
-                        </SelectItem>
+                    {municipios.length > 0 ? (
+                      municipios.map((municipio) => (
+                        <SelectItem key={municipio.id} value={municipio.name}>{municipio.name}</SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="otro">Otro</SelectItem>
+                      <SelectItem value="no-data" disabled>No hay municipios</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -468,11 +526,13 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                 <SelectValue placeholder="Selecciona tu estado civil" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="soltero">Soltero(a)</SelectItem>
-                <SelectItem value="casado">Casado(a)</SelectItem>
-                <SelectItem value="union-libre">Unión Libre</SelectItem>
-                <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                <SelectItem value="viudo">Viudo(a)</SelectItem>
+                {estadosCiviles.length > 0 ? (
+                  estadosCiviles.map((ec) => (
+                    <SelectItem key={ec.id} value={ec.name}>{ec.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-data" disabled>No hay estados civiles</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -484,11 +544,13 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                 <SelectValue placeholder="Selecciona tu lengua natal" />
               </SelectTrigger>
               <SelectContent>
-                {idiomas.map((idioma) => (
-                  <SelectItem key={idioma} value={idioma}>
-                    {idioma}
-                  </SelectItem>
-                ))}
+                {lenguasNatales.length > 0 ? (
+                  lenguasNatales.map((ln) => (
+                    <SelectItem key={ln.id} value={ln.name}>{ln.name}</SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-data" disabled>No hay lenguas</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
