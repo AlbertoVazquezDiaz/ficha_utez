@@ -121,15 +121,6 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
     onChange({ ...data, [name]: value })
   }
 
-  // Limpiar nombre de prepa cuando cambia el tipo
-  useEffect(() => {
-    if (data.tipoPrepa && data.tipoPrepa !== "Otra" && (data.nombrePrepa !== "" || data.tipoPrepaOtra !== "")) {
-      onChange({ ...data, nombrePrepa: "", tipoPrepaOtra: "" })
-    }
-    // Solo depende de tipoPrepa
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.tipoPrepa])
-
   return (
     <Card>
       <CardHeader>
@@ -142,67 +133,29 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
         {/* Tipo de preparatoria */}
         <div className="space-y-3">
           <Label>Tipo de Preparatoria *</Label>
-          <Popover open={openTipoPrepa} onOpenChange={setOpenTipoPrepa}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={openTipoPrepa}
-                className={cn("w-full justify-between", data.tipoPrepa ? "border-green-500" : "")}
-              >
-                {data.tipoPrepa || (loadingTiposPrepa ? "Cargando..." : "Selecciona el tipo de preparatoria")}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput placeholder="Buscar tipo de preparatoria..." />
-                <CommandList>
-                  <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-                  <CommandGroup>
-                    {errorTiposPrepa && <CommandItem disabled>{errorTiposPrepa}</CommandItem>}
-                    {tiposPrepa
-                      .filter(tipo => {
-                        // Si hay texto en el input, filtra por coincidencia, si no, muestra todos
-                        const input = document.querySelector('[placeholder="Buscar tipo de preparatoria..."]') as HTMLInputElement | null;
-                        if (input && input.value) {
-                          return tipo.name.toLowerCase().includes(input.value.toLowerCase()) || (tipo.abrevation && tipo.abrevation.toLowerCase().includes(input.value.toLowerCase()));
-                        }
-                        return true;
-                      })
-                      .map((tipo) => (
-                        <CommandItem
-                          key={tipo.id}
-                          onSelect={() => {
-                            onChange({ ...data, tipoPrepa: tipo.name })
-                            setOpenTipoPrepa(false)
-                          }}
-                          value={tipo.name}
-                        >
-                          <Check className={cn("mr-2 h-4 w-4", data.tipoPrepa === tipo.name ? "opacity-100" : "opacity-0")} />
-                          {tipo.name}
-                          {tipo.abrevation && (
-                            <span className="ml-2 text-xs text-gray-400">({tipo.abrevation})</span>
-                          )}
-                        </CommandItem>
-                      ))}
-                    <CommandItem
-                      key="Otra"
-                      onSelect={() => {
-                        onChange({ ...data, tipoPrepa: "Otra" })
-                        setOpenTipoPrepa(false)
-                      }}
-                      value="Otra"
-                    >
-                      <Check className={cn("mr-2 h-4 w-4", data.tipoPrepa === "Otra" ? "opacity-100" : "opacity-0")} />
-                      Otra
-                    </CommandItem>
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
+          <Select
+            value={data.tipoPrepa || ""}
+            onValueChange={(value) => {
+              onChange({ ...data, tipoPrepa: value })
+            }}
+            disabled={loadingTiposPrepa}
+          >
+            <SelectTrigger className={cn("w-full justify-between", data.tipoPrepa ? "border-green-500" : "")}> 
+              <SelectValue placeholder={loadingTiposPrepa ? "Cargando..." : "Selecciona el tipo de preparatoria"} />
+            </SelectTrigger>
+            <SelectContent>
+              {errorTiposPrepa && <SelectItem value="error" disabled>{errorTiposPrepa}</SelectItem>}
+              {tiposPrepa.map((tipo) => (
+                <SelectItem key={tipo.id} value={tipo.name}>
+                  {tipo.name}
+                  {tipo.abrevation && (
+                    <span className="ml-2 text-xs text-gray-400">({tipo.abrevation})</span>
+                  )}
+                </SelectItem>
+              ))}
+              <SelectItem value="Otra">Otra</SelectItem>
+            </SelectContent>
+          </Select>
           {data.tipoPrepa === "Otra" && (
             <div className="space-y-2">
               <Label htmlFor="tipoPrepaOtra">Especifica el tipo de preparatoria *</Label>
@@ -389,7 +342,23 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
             max="10.0"
             step="0.1"
             value={data.promedio || ""}
-            onChange={(e) => validateField("promedio", e.target.value)}
+            onChange={(e) => {
+              let value = e.target.value
+              // Si el usuario escribe 10, no permitir decimales
+              if (value === "10" || value === "10.") {
+                validateField("promedio", "10")
+                return
+              }
+              // Permitir solo números con máximo un decimal
+              if (/^\d{0,2}(\.\d?)?$/.test(value)) {
+                // No permitir 10.0, 10.1, etc.
+                if (value.startsWith("10")) {
+                  validateField("promedio", "10")
+                } else {
+                  validateField("promedio", value)
+                }
+              }
+            }}
             className={cn(
               "transition-colors",
               errors.promedio

@@ -15,7 +15,7 @@ export interface TipoPrepa {
 }
 
 export async function fetchEstadosMexico(): Promise<Estado[]> {
-  const res = await fetch("http://192.168.0.101:8080/api/fichas-utez/states")
+  const res = await fetch("http://192.168.0.103:8080/api/fichas-utez/states")
   if (!res.ok) throw new Error("No se pudieron obtener los estados")
   const data = await res.json()
   if (!Array.isArray(data.data)) throw new Error("Formato inesperado de respuesta")
@@ -23,7 +23,7 @@ export async function fetchEstadosMexico(): Promise<Estado[]> {
 }
 
 export async function fetchMunicipiosPorEstado(stateId: number): Promise<Municipio[]> {
-  const res = await fetch(`http://192.168.0.101:8080/api/fichas-utez/municipalities/state/${stateId}`)
+  const res = await fetch(`http://192.168.0.103:8080/api/fichas-utez/municipalities/state/${stateId}`)
   if (!res.ok) throw new Error("No se pudieron obtener los municipios")
   const data = await res.json()
 console.log(data);
@@ -33,7 +33,7 @@ console.log(data);
 }
 
 export async function fetchTiposPrepa(): Promise<TipoPrepa[]> {
-  const res = await fetch("http://192.168.0.101:8080/api/fichas-utez/high-school-types")
+  const res = await fetch("http://192.168.0.103:8080/api/fichas-utez/high-school-types")
   if (!res.ok) throw new Error("No se pudieron obtener los tipos de preparatoria")
   const data = await res.json()
   if (!Array.isArray(data.data)) throw new Error("Formato inesperado de respuesta de tipos de prepa")
