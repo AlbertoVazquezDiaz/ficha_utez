@@ -97,10 +97,10 @@ export default function AdmissionForm() {
       </div>
 
       {/* Progress Bar */}
-      <div className="bg-[#cfd4c1] py-4">
+      <div className="bg-[#FFFF] py-4">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-[#888888]">Progreso del formulario</span>
+            <span className="text-sm font-medium text-[#70785b]">Progreso del formulario</span>
             <span className="text-sm font-medium text-[#70785b]">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-2" />
