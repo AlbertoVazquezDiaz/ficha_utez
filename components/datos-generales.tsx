@@ -94,11 +94,23 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
     switch (name) {
       case "nombre":
       case "primerApellido":
-      case "segundoApellido":
         if (value.length < 3) {
           newErrors[name] = "Mínimo 3 caracteres"
         } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
           newErrors[name] = "Solo letras, acentos y espacios"
+        } else {
+          delete newErrors[name]
+        }
+        break
+      case "segundoApellido":
+        if (value) {
+          if (value.length < 3) {
+            newErrors[name] = "Mínimo 3 caracteres"
+          } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+            newErrors[name] = "Solo letras, acentos y espacios"
+          } else {
+            delete newErrors[name]
+          }
         } else {
           delete newErrors[name]
         }
