@@ -33,7 +33,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch("http://192.168.0.101:8080/api/fichas-utez/school-careers", {
+    fetch("http://192.168.0.103:8080/api/fichas-utez/school-careers", {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -52,7 +52,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("http://192.168.0.101:8080/api/fichas-utez/media-channels", {
+    fetch("http://192.168.0.103:8080/api/fichas-utez/media-channels", {
       signal: controller.signal,
     })
       .then((res) => res.json())
