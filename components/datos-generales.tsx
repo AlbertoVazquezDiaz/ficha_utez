@@ -7,156 +7,86 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
-import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select"
 import { useDisabilities } from "@/hooks/use-disabilities"
+import { 
+  fetchNacionalidades, 
+  fetchEstadosPorPais, 
+  fetchEstadosCiviles, 
+  fetchLenguasNatales,
+  type Nacionalidad,
+  type EstadoCivil,
+  type LenguaNatal
+} from "@/lib/api-datos-generales"
+import { type Estado, type Municipio, fetchMunicipiosPorEstado } from "@/lib/api-estados"
 
 interface DatosGeneralesProps {
   data: any
   onChange: (data: any) => void
 }
 
-const estadosMexico = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Ciudad de México",
-  "Coahuila",
-  "Colima",
-  "Durango",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "México",
-  "Michoacán",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz",
-  "Yucatán",
-  "Zacatecas",
-]
-
-const municipiosMorelos = [
-  "Amacuzac",
-  "Atlatlahucan",
-  "Axochiapan",
-  "Ayala",
-  "Coatlán del Río",
-  "Cuautla",
-  "Cuernavaca",
-  "Emiliano Zapata",
-  "Huitzilac",
-  "Jantetelco",
-  "Jiutepec",
-  "Jojutla",
-  "Jonacatepec de Leandro Valle",
-  "Mazatepec",
-  "Miacatlán",
-  "Ocuituco",
-  "Puente de Ixtla",
-  "Temixco",
-  "Tepalcingo",
-  "Tepoztlán",
-  "Tetecala",
-  "Tetela del Volcán",
-  "Tlalnepantla",
-  "Tlaltizapán de Zapata",
-  "Tlaquiltenango",
-  "Tlayacapan",
-  "Totolapan",
-  "Xochitepec",
-  "Yautepec",
-  "Yecapixtla",
-  "Zacatepec",
-  "Zacualpan de Amilpas",
-]
-
-const idiomas = [
-  "Español",
-  "Inglés",
-  "Francés",
-  "Alemán",
-  "Italiano",
-  "Portugués",
-  "Chino Mandarín",
-  "Japonés",
-  "Coreano",
-  "Árabe",
-  "Ruso",
-  "Náhuatl",
-  "Maya",
-  "Zapoteco",
-  "Mixteco",
-  "Otomí",
-]
 
 export default function DatosGeneralesComponent({ data, onChange }: DatosGeneralesProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Estados para datos dinámicos
-  const [nacionalidades, setNacionalidades] = useState<{ id: number; name: string }[]>([])
-  const [estados, setEstados] = useState<{ id: number; name: string }[]>([])
-  const [municipios, setMunicipios] = useState<{ id: number; name: string }[]>([])
-  const [estadosCiviles, setEstadosCiviles] = useState<{ id: number; name: string }[]>([])
-  const [lenguasNatales, setLenguasNatales] = useState<{ id: number; name: string }[]>([])
+  const [nacionalidades, setNacionalidades] = useState<Nacionalidad[]>([])
+  const [estados, setEstados] = useState<Estado[]>([])
+  const [municipios, setMunicipios] = useState<Municipio[]>([])
+  const [estadosCiviles, setEstadosCiviles] = useState<EstadoCivil[]>([])
+  const [lenguasNatales, setLenguasNatales] = useState<LenguaNatal[]>([])
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.0.101:8080/api/fichas-utez"
 
   // Fetch inicial de catálogos
   useEffect(() => {
-    fetch(`${API_BASE}/nationalities`)
-      .then(res => res.json())
-      .then(json => {
-        if (!json.data || !Array.isArray(json.data)) {
-          throw new Error("La respuesta no contiene un array válido en data")
-        }
-        setNacionalidades(json.data)
-      })
-      .catch(() => setNacionalidades([]))
-    fetch(`${API_BASE}/states/country/1`)
-      .then(res => res.json())
-      .then(setEstados)
-      .catch(() => setEstados([]))
-    fetch(`${API_BASE}/api/civil-status`)
-      .then(res => res.json())
-      .then(setEstadosCiviles)
-      .catch(() => setEstadosCiviles([]))
-    fetch(`${API_BASE}/api/native-languages`)
-      .then(res => res.json())
-      .then(setLenguasNatales)
-      .catch(() => setLenguasNatales([]))
-  }, [API_BASE])
+    const fetchData = async () => {
+      try {
+        const [nacionalidadesData, estadosData, estadosCivilesData, lenguasNatalesData] = await Promise.all([
+          fetchNacionalidades(),
+          fetchEstadosPorPais(),
+          fetchEstadosCiviles(),
+          fetchLenguasNatales()
+        ])
+
+        setNacionalidades(nacionalidadesData)
+        setEstados(estadosData)
+        setEstadosCiviles(estadosCivilesData)
+        setLenguasNatales(lenguasNatalesData)
+      } catch (error) {
+        console.error("Error fetching data:", error)
+        // Mantener los arrays vacíos en caso de error
+        setNacionalidades([])
+        setEstados([])
+        setEstadosCiviles([])
+        setLenguasNatales([])
+      }
+    }
+
+    fetchData()
+  }, [])
 
   // Fetch de municipios cuando cambia el estado
   useEffect(() => {
-    if (data.estadoNacimiento) {
-      const estadoObj = estados.find(e => e.name === data.estadoNacimiento)
-      if (estadoObj) {
-        fetch(`${API_BASE}/municipalities/state/${estadoObj.id}`)
-          .then(res => res.json())
-          .then(setMunicipios)
-          .catch(() => setMunicipios([]))
+    const fetchMunicipios = async () => {
+      if (data.estadoNacimiento) {
+        const estadoObj = estados.find(e => e.name === data.estadoNacimiento)
+        if (estadoObj) {
+          try {
+            const municipiosData = await fetchMunicipiosPorEstado(estadoObj.id)
+            setMunicipios(municipiosData)
+          } catch (error) {
+            console.error("Error fetching municipios:", error)
+            setMunicipios([])
+          }
+        } else {
+          setMunicipios([])
+        }
       } else {
         setMunicipios([])
       }
-    } else {
-      setMunicipios([])
     }
-  }, [data.estadoNacimiento, estados, API_BASE])
+
+    fetchMunicipios()
+  }, [data.estadoNacimiento, estados])
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors }
@@ -295,7 +225,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="segundoApellido">Segundo Apellido *</Label>
+            <Label htmlFor="segundoApellido">Segundo Apellido</Label>
             <Input
               id="segundoApellido"
               value={data.segundoApellido || ""}
@@ -409,7 +339,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                     <SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-data" disabled>No hay nacionalidades</SelectItem>
+                  <SelectItem value="no-disponible" disabled>No hay nacionalidades</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -432,7 +362,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                         <SelectItem key={estado.id} value={estado.name}>{estado.name}</SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-data" disabled>No hay estados</SelectItem>
+                      <SelectItem value="no-disponible" disabled>No hay estados</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -454,7 +384,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                         <SelectItem key={municipio.id} value={municipio.name}>{municipio.name}</SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="no-data" disabled>No hay municipios</SelectItem>
+                      <SelectItem value="no-disponible" disabled>No hay municipios</SelectItem>
                     )}
                   </SelectContent>
                 </Select>
@@ -462,7 +392,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
             </div>
           )}
 
-          {data.nacionalidad === "extranjera" && (
+          {data.nacionalidad === "Extranjero(a)" && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="paisNacimiento">País de Nacimiento *</Label>
@@ -531,7 +461,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                     <SelectItem key={ec.id} value={ec.name}>{ec.name}</SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-data" disabled>No hay estados civiles</SelectItem>
+                  <SelectItem value="no-disponible" disabled>No hay estados civiles</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -549,7 +479,7 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                     <SelectItem key={ln.id} value={ln.name}>{ln.name}</SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="no-data" disabled>No hay lenguas</SelectItem>
+                  <SelectItem value="no-disponible" disabled>No hay lenguas</SelectItem>
                 )}
               </SelectContent>
             </Select>

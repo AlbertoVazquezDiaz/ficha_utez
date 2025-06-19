@@ -29,11 +29,11 @@ interface MultiSelectProps {
   onSelectionChange: (selected: string[]) => void
   placeholder: string
   searchPlaceholder: string
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-function MultiSelect({ options, selected, onSelectionChange, placeholder, searchPlaceholder }: MultiSelectProps) {
-  const [open, setOpen] = useState(false)
-
+function MultiSelect({ options, selected, onSelectionChange, placeholder, searchPlaceholder, isOpen, onOpenChange }: MultiSelectProps) {
   const handleSelect = (option: string) => {
     if (option === "Ninguna") {
       onSelectionChange(["Ninguna"])
@@ -45,7 +45,6 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
         onSelectionChange([...newSelected, option])
       }
     }
-    setOpen(true) // Keep the popover open after selection
   }
 
   const removeItem = (item: string) => {
@@ -54,12 +53,12 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
 
   return (
     <div className="space-y-2">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isOpen} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
-            aria-expanded={open}
+            aria-expanded={isOpen}
             className="w-full justify-between h-auto min-h-[40px] p-2"
           >
             <div className="flex flex-wrap gap-1">
@@ -114,6 +113,8 @@ interface DisabilityMultiSelectProps {
   onSelectionChange: (selected: string[]) => void
   placeholder: string
   searchPlaceholder: string
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 function DisabilityMultiSelect({
@@ -121,8 +122,9 @@ function DisabilityMultiSelect({
   onSelectionChange,
   placeholder,
   searchPlaceholder,
+  isOpen,
+  onOpenChange
 }: DisabilityMultiSelectProps) {
-  const [open, setOpen] = useState(false)
   const { disabilities, loading, error, refetch, isUsingFallback } = useDisabilities()
 
   const handleSelect = (disabilityName: string) => {
@@ -136,7 +138,6 @@ function DisabilityMultiSelect({
         onSelectionChange([...newSelected, disabilityName])
       }
     }
-    setOpen(true) // Keep the popover open after selection
   }
 
   const removeItem = (item: string) => {
@@ -182,12 +183,12 @@ function DisabilityMultiSelect({
         </details>
       )}
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={isOpen} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
-            aria-expanded={open}
+            aria-expanded={isOpen}
             className="w-full justify-between h-auto min-h-[40px] p-2"
             disabled={loading}
           >
@@ -249,6 +250,7 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
   const [lenguasIndigenasAPI, setLenguasIndigenasAPI] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [openPopover, setOpenPopover] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchLenguasIndigenas = async () => {
@@ -330,6 +332,8 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
             onSelectionChange={handleDiscapacidadesChange}
             placeholder="Selecciona las opciones que apliquen"
             searchPlaceholder="Buscar discapacidad..."
+            isOpen={openPopover === 'disabilities'}
+            onOpenChange={(open) => setOpenPopover(open ? 'disabilities' : null)}
           />
 
           {data.discapacidades?.includes("Otro") && (
@@ -363,6 +367,8 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
               onSelectionChange={handleLenguasPadresChange}
               placeholder="Selecciona las lenguas que apliquen"
               searchPlaceholder="Buscar lengua indígena..."
+              isOpen={openPopover === 'parentLanguages'}
+              onOpenChange={(open) => setOpenPopover(open ? 'parentLanguages' : null)}
             />
           )}
 
@@ -400,6 +406,8 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
               onSelectionChange={handleLenguasPersonalesChange}
               placeholder="Selecciona las lenguas que hablas"
               searchPlaceholder="Buscar lengua indígena..."
+              isOpen={openPopover === 'personalLanguages'}
+              onOpenChange={(open) => setOpenPopover(open ? 'personalLanguages' : null)}
             />
           )}
 
