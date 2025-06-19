@@ -360,108 +360,74 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
               </SelectContent>
             </Select>
           </div>
-
-          {data.nacionalidad === "mexicana" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Estado de Nacimiento *</Label>
-                <Select
-                  value={data.estadoNacimiento || ""}
-                  onValueChange={(value) => onChange({ ...data, estadoNacimiento: value, municipioNacimiento: "" })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estados.length > 0 ? (
-                      estados.map((estado) => (
-                        <SelectItem key={estado.id} value={estado.name}>{estado.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-disponible" disabled>No hay estados</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Municipio de Nacimiento *</Label>
-                <Select
-                  value={data.municipioNacimiento || ""}
-                  onValueChange={(value) => onChange({ ...data, municipioNacimiento: value })}
-                  disabled={!data.estadoNacimiento}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el municipio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {municipios.length > 0 ? (
-                      municipios.map((municipio) => (
-                        <SelectItem key={municipio.id} value={municipio.name}>{municipio.name}</SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-disponible" disabled>No hay municipios</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {data.nacionalidad === "Extranjero(a)" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="paisNacimiento">País de Nacimiento *</Label>
-                <Input
-                  id="paisNacimiento"
-                  value={data.paisNacimiento || ""}
-                  onChange={(e) => validateField("paisNacimiento", e.target.value)}
-                  className={cn(
-                    "transition-colors",
-                    errors.paisNacimiento ? "border-[#c0392b] focus:border-[#c0392b]" : "",
-                  )}
-                  placeholder="País de nacimiento"
-                  maxLength={50}
-                />
-                {errors.paisNacimiento && <p className="text-xs text-[#c0392b]">{errors.paisNacimiento}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="estadoNacimientoExtranjero">Estado/Provincia *</Label>
-                <Input
-                  id="estadoNacimientoExtranjero"
-                  value={data.estadoNacimientoExtranjero || ""}
-                  onChange={(e) => validateField("estadoNacimientoExtranjero", e.target.value)}
-                  className={cn(
-                    "transition-colors",
-                    errors.estadoNacimientoExtranjero ? "border-[#c0392b] focus:border-[#c0392b]" : "",
-                  )}
-                  placeholder="Estado o provincia"
-                  maxLength={50}
-                />
-                {errors.estadoNacimientoExtranjero && (
-                  <p className="text-xs text-[#c0392b]">{errors.estadoNacimientoExtranjero}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ciudadNacimiento">Ciudad *</Label>
-                <Input
-                  id="ciudadNacimiento"
-                  value={data.ciudadNacimiento || ""}
-                  onChange={(e) => validateField("ciudadNacimiento", e.target.value)}
-                  className={cn(
-                    "transition-colors",
-                    errors.ciudadNacimiento ? "border-[#c0392b] focus:border-[#c0392b]" : "",
-                  )}
-                  placeholder="Ciudad de nacimiento"
-                  maxLength={50}
-                />
-                {errors.ciudadNacimiento && <p className="text-xs text-[#c0392b]">{errors.ciudadNacimiento}</p>}
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Lugar de nacimiento: país, estado/provincia, ciudad */}
+        {data.nacionalidad && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="paisNacimiento">País de Nacimiento *</Label>
+              <Input
+                id="paisNacimiento"
+                value={data.paisNacimiento || ""}
+                onChange={(e) => validateField("paisNacimiento", e.target.value)}
+                className={cn(
+                  "transition-colors",
+                  (!data.paisNacimiento || errors.paisNacimiento)
+                    ? "border-[#c0392b] focus:border-[#c0392b]"
+                    : data.paisNacimiento && !errors.paisNacimiento
+                      ? "border-green-500"
+                      : ""
+                )}
+                placeholder="País de nacimiento"
+                maxLength={50}
+              />
+              {errors.paisNacimiento && <p className="text-xs text-[#c0392b]">{errors.paisNacimiento}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="estadoNacimientoExtranjero">Estado/Provincia *</Label>
+              <Input
+                id="estadoNacimientoExtranjero"
+                value={data.estadoNacimientoExtranjero || ""}
+                onChange={(e) => validateField("estadoNacimientoExtranjero", e.target.value)}
+                className={cn(
+                  "transition-colors",
+                  (!data.estadoNacimientoExtranjero || errors.estadoNacimientoExtranjero)
+                    ? "border-[#c0392b] focus:border-[#c0392b]"
+                    : data.estadoNacimientoExtranjero && !errors.estadoNacimientoExtranjero
+                      ? "border-green-500"
+                      : ""
+                )}
+                placeholder="Estado o provincia"
+                maxLength={50}
+              />
+              {errors.estadoNacimientoExtranjero && (
+                <p className="text-xs text-[#c0392b]">{errors.estadoNacimientoExtranjero}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ciudadNacimiento">Ciudad *</Label>
+              <Input
+                id="ciudadNacimiento"
+                value={data.ciudadNacimiento || ""}
+                onChange={(e) => validateField("ciudadNacimiento", e.target.value)}
+                className={cn(
+                  "transition-colors",
+                  (!data.ciudadNacimiento || errors.ciudadNacimiento)
+                    ? "border-[#c0392b] focus:border-[#c0392b]"
+                    : data.ciudadNacimiento && !errors.ciudadNacimiento
+                      ? "border-green-500"
+                      : ""
+                )}
+                placeholder="Ciudad de nacimiento"
+                maxLength={50}
+              />
+              {errors.ciudadNacimiento && <p className="text-xs text-[#c0392b]">{errors.ciudadNacimiento}</p>}
+            </div>
+          </div>
+        )}
 
         {/* Estado Civil y Lengua */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
