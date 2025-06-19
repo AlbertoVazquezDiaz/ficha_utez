@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { fetchEstadosMexico, fetchMunicipiosPorEstado, Estado, Municipio } from "@/lib/api-estados"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,78 +13,40 @@ interface DomicilioProps {
   onChange: (data: any) => void
 }
 
-const estadosMexico = [
-  "Aguascalientes",
-  "Baja California",
-  "Baja California Sur",
-  "Campeche",
-  "Chiapas",
-  "Chihuahua",
-  "Ciudad de México",
-  "Coahuila",
-  "Colima",
-  "Durango",
-  "Guanajuato",
-  "Guerrero",
-  "Hidalgo",
-  "Jalisco",
-  "México",
-  "Michoacán",
-  "Morelos",
-  "Nayarit",
-  "Nuevo León",
-  "Oaxaca",
-  "Puebla",
-  "Querétaro",
-  "Quintana Roo",
-  "San Luis Potosí",
-  "Sinaloa",
-  "Sonora",
-  "Tabasco",
-  "Tamaulipas",
-  "Tlaxcala",
-  "Veracruz",
-  "Yucatán",
-  "Zacatecas",
-]
-
-const municipiosMorelos = [
-  "Amacuzac",
-  "Atlatlahucan",
-  "Axochiapan",
-  "Ayala",
-  "Coatlán del Río",
-  "Cuautla",
-  "Cuernavaca",
-  "Emiliano Zapata",
-  "Huitzilac",
-  "Jantetelco",
-  "Jiutepec",
-  "Jojutla",
-  "Jonacatepec de Leandro Valle",
-  "Mazatepec",
-  "Miacatlán",
-  "Ocuituco",
-  "Puente de Ixtla",
-  "Temixco",
-  "Tepalcingo",
-  "Tepoztlán",
-  "Tetecala",
-  "Tetela del Volcán",
-  "Tlalnepantla",
-  "Tlaltizapán de Zapata",
-  "Tlaquiltenango",
-  "Tlayacapan",
-  "Totolapan",
-  "Xochitepec",
-  "Yautepec",
-  "Yecapixtla",
-  "Zacatepec",
-  "Zacualpan de Amilpas",
-]
-
 export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [estados, setEstados] = useState<Estado[]>([])
+  const [municipios, setMunicipios] = useState<Municipio[]>([])
+  const [loadingEstados, setLoadingEstados] = useState(false)
+  const [loadingMunicipios, setLoadingMunicipios] = useState(false)
+  const [errorEstados, setErrorEstados] = useState<string | null>(null)
+  const [errorMunicipios, setErrorMunicipios] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoadingEstados(true)
+    fetchEstadosMexico()
+      .then(setEstados)
+      .catch((err) => setErrorEstados(err.message))
+      .finally(() => setLoadingEstados(false))
+  }, [])
+
+  useEffect(() => {
+    if (!data.estado) {
+      setMunicipios([])
+      return
+    }
+    setLoadingMunicipios(true)
+    const estadoObj = estados.find(e => e.name === data.estado)
+    if (!estadoObj) {
+      setMunicipios([])
+      setLoadingMunicipios(false)
+      return
+    }
+    fetchMunicipiosPorEstado(estadoObj.id)
+      .then(setMunicipios)
+      .catch((err) => setErrorMunicipios(err.message))
+      .finally(() => setLoadingMunicipios(false))
+  }, [data.estado, estados])
 
   const validateField = (name: string, value: string) => {
     const newErrors = { ...errors }
@@ -136,7 +99,11 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               onChange={(e) => validateField("calle", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.calle ? "border-[#c0392b] focus:border-[#c0392b]" : data.calle ? "border-green-500" : "",
+                (!data.calle || errors.calle)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : data.calle.length > 0
+                    ? "border-green-500"
+                    : ""
               )}
               placeholder="Nombre de la calle"
             />
@@ -151,11 +118,11 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               onChange={(e) => validateField("numeroExterior", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.numeroExterior
+                (!data.numeroExterior || errors.numeroExterior)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.numeroExterior
+                  : data.numeroExterior.length > 0
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="Núm. exterior"
             />
@@ -183,7 +150,11 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               onChange={(e) => validateField("colonia", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.colonia ? "border-[#c0392b] focus:border-[#c0392b]" : data.colonia ? "border-green-500" : "",
+                (!data.colonia || errors.colonia)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : data.colonia.length > 0
+                    ? "border-green-500"
+                    : ""
               )}
               placeholder="Nombre de la colonia"
             />
@@ -209,16 +180,26 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               value={data.estado || ""}
               onValueChange={(value) => onChange({ ...data, estado: value, municipio: "" })}
             >
-              <SelectTrigger className={cn("transition-colors", data.estado ? "border-green-500" : "")}>
-                <SelectValue placeholder="Selecciona el estado" />
+              <SelectTrigger className={cn(
+                "transition-colors",
+                (!data.estado)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : "border-green-500"
+              )}>
+                <SelectValue placeholder={loadingEstados ? "Cargando..." : "Selecciona el estado"} />
               </SelectTrigger>
               <SelectContent>
-                {estadosMexico.map((estado) => (
-                  <SelectItem key={estado} value={estado}>
-                    {estado}
-                  </SelectItem>
-                ))}
-                <SelectItem value="otro">Otro</SelectItem>
+                {loadingEstados ? (
+                  <SelectItem value="placeholder" disabled>Cargando...</SelectItem>
+                ) : errorEstados ? (
+                  <SelectItem value="error" disabled>Error al cargar</SelectItem>
+                ) : (
+                  estados.map((estado) => (
+                    <SelectItem key={estado.id} value={estado.name}>
+                      {estado.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -228,20 +209,27 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
             <Select
               value={data.municipio || ""}
               onValueChange={(value) => onChange({ ...data, municipio: value })}
-              disabled={!data.estado}
+              disabled={!data.estado || loadingMunicipios}
             >
-              <SelectTrigger className={cn("transition-colors", data.municipio ? "border-green-500" : "")}>
-                <SelectValue placeholder="Selecciona el municipio" />
+              <SelectTrigger className={cn(
+                "transition-colors",
+                (!data.municipio)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : "border-green-500"
+              )}>
+                <SelectValue placeholder={loadingMunicipios ? "Cargando..." : "Selecciona el municipio"} />
               </SelectTrigger>
               <SelectContent>
-                {data.estado === "Morelos" ? (
-                  municipiosMorelos.map((municipio) => (
-                    <SelectItem key={municipio} value={municipio}>
-                      {municipio}
+                {loadingMunicipios ? (
+                  <SelectItem value="placeholder" disabled>Cargando...</SelectItem>
+                ) : errorMunicipios ? (
+                  <SelectItem value="error" disabled>Error al cargar</SelectItem>
+                ) : (
+                  municipios.map((municipio) => (
+                    <SelectItem key={municipio.id} value={municipio.name}>
+                      {municipio.name}
                     </SelectItem>
                   ))
-                ) : (
-                  <SelectItem value="otro">Otro</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -261,11 +249,11 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               }}
               className={cn(
                 "transition-colors",
-                errors.codigoPostal
+                (!data.codigoPostal || errors.codigoPostal)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.codigoPostal && data.codigoPostal.length === 5
+                  : data.codigoPostal.length === 5
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="12345"
               maxLength={5}
@@ -282,11 +270,11 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
               onChange={(e) => validateField("email", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.email
+                (!data.email || errors.email)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.email && data.email.includes("@")
+                  : data.email.includes("@") && data.email.length > 4
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="tu@email.com"
             />

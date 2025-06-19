@@ -206,11 +206,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
               onChange={(e) => validateField("nombre", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.nombre
+                (!data.nombre || errors.nombre)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.nombre && data.nombre.length >= 3
+                  : data.nombre.length >= 3
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="Ingresa tu nombre"
             />
@@ -225,11 +225,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
               onChange={(e) => validateField("primerApellido", e.target.value)}
               className={cn(
                 "transition-colors",
-                errors.primerApellido
+                (!data.primerApellido || errors.primerApellido)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.primerApellido && data.primerApellido.length >= 3
+                  : data.primerApellido.length >= 3
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="Primer apellido"
             />
@@ -266,11 +266,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
               onChange={(e) => validateField("curp", e.target.value)}
               className={cn(
                 "transition-colors uppercase",
-                errors.curp
+                (!data.curp || errors.curp)
                   ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.curp && data.curp.length === 18
+                  : data.curp.length === 18
                     ? "border-green-500"
-                    : "",
+                    : ""
               )}
               placeholder="CURP (18 caracteres)"
               maxLength={18}
@@ -288,11 +288,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
                 onChange={(e) => validateField("fechaNacimiento", e.target.value)}
                 className={cn(
                   "transition-colors",
-                  errors.fechaNacimiento
+                  (!data.fechaNacimiento || errors.fechaNacimiento)
                     ? "border-[#c0392b] focus:border-[#c0392b]"
                     : data.fechaNacimiento && calculateAge(data.fechaNacimiento) >= 15
                       ? "border-green-500"
-                      : "",
+                      : ""
                 )}
               />
               {errors.fechaNacimiento && <p className="text-xs text-[#c0392b]">{errors.fechaNacimiento}</p>}
@@ -342,7 +342,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
               value={data.nacionalidad || ""}
               onValueChange={(value) => onChange({ ...data, nacionalidad: value })}
             >
-              <SelectTrigger>
+              <SelectTrigger className={cn(
+                (!data.nacionalidad)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : "border-green-500"
+              )}>
                 <SelectValue placeholder="Selecciona tu nacionalidad" />
               </SelectTrigger>
               <SelectContent>
@@ -464,7 +468,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
           <div className="space-y-2">
             <Label>Estado Civil *</Label>
             <Select value={data.estadoCivil || ""} onValueChange={(value) => onChange({ ...data, estadoCivil: value })}>
-              <SelectTrigger>
+              <SelectTrigger className={cn(
+                (!data.estadoCivil)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : "border-green-500"
+              )}>
                 <SelectValue placeholder="Selecciona tu estado civil" />
               </SelectTrigger>
               <SelectContent>
@@ -482,7 +490,11 @@ export default function DatosGeneralesComponent({ data, onChange }: DatosGeneral
           <div className="space-y-2">
             <Label>Lengua Natal *</Label>
             <Select value={data.lenguaNatal || ""} onValueChange={(value) => onChange({ ...data, lenguaNatal: value })}>
-              <SelectTrigger>
+              <SelectTrigger className={cn(
+                (!data.lenguaNatal)
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : "border-green-500"
+              )}>
                 <SelectValue placeholder="Selecciona tu lengua natal" />
               </SelectTrigger>
               <SelectContent>
