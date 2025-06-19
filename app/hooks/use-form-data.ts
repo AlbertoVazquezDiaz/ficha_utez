@@ -170,7 +170,8 @@ export function useFormData() {
           return !!(
             datosGenerales.nombre.length >= 3 &&
             datosGenerales.primerApellido.length >= 3 &&
-            datosGenerales.segundoApellido.length >= 3 &&
+            // El segundo apellido es opcional, solo validar si tiene valor
+            (datosGenerales.segundoApellido.length === 0 || datosGenerales.segundoApellido.length >= 3) &&
             datosGenerales.curp.length === 18 &&
             datosGenerales.fechaNacimiento &&
             datosGenerales.sexo &&

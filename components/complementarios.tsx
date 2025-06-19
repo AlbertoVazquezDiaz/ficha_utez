@@ -87,7 +87,7 @@ function MultiSelect({ options, selected, onSelectionChange, placeholder, search
           <Command>
             <CommandInput placeholder={searchPlaceholder} />
             <CommandList>
-              <CommandEmpty>No se encontraron opciones.</CommandEmpty>
+              {/* <CommandEmpty>No se encontraron opciones.</CommandEmpty> */}
               <CommandGroup>
                 {options.map((option) => (
                   <div 
@@ -223,7 +223,7 @@ function DisabilityMultiSelect({
           <Command>
             <CommandInput placeholder={searchPlaceholder} />
             <CommandList>
-              <CommandEmpty>{loading ? "Cargando..." : "No se encontraron opciones."}</CommandEmpty>
+              {/* <CommandEmpty>{loading ? "Cargando..." : "No se encontraron opciones."}</CommandEmpty> */}
               <CommandGroup>
                 {disabilities.map((disability) => (
                   <div 
@@ -246,11 +246,19 @@ function DisabilityMultiSelect({
   )
 }
 
-export default function ComplementariosComponent({ data, onChange }: ComplementariosProps) {
+export default function ComplementariosComponent({ data, onChange, showErrors = false }: ComplementariosProps & { showErrors?: boolean }) {
   const [lenguasIndigenasAPI, setLenguasIndigenasAPI] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [openPopover, setOpenPopover] = useState<string | null>(null)
+
+  // Validaciones locales para UX
+  const isDiscapacidadObligatoria = showErrors && (!data.discapacidades || data.discapacidades.length === 0)
+  const isDiscapacidadOtraObligatoria = showErrors && data.discapacidades?.includes("Otro") && !data.discapacidadOtra
+  const isLenguasPadresObligatoria = showErrors && (!data.lenguasIndigenasPadres || data.lenguasIndigenasPadres.length === 0)
+  const isLenguasPadresOtraObligatoria = showErrors && data.lenguasIndigenasPadres?.includes("Otro o varias") && !data.lenguasIndigenasPadresOtra
+  const isLenguasPersonalesObligatoria = showErrors && (!data.lenguasIndigenasPersonales || data.lenguasIndigenasPersonales.length === 0)
+  const isLenguasPersonalesOtraObligatoria = showErrors && data.lenguasIndigenasPersonales?.includes("Otro o varias") && !data.lenguasIndigenasPersonalesOtra
 
   useEffect(() => {
     const fetchLenguasIndigenas = async () => {
@@ -326,7 +334,7 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
       <CardContent className="space-y-6">
         {/* Discapacidades - Ahora consume la API con fallback */}
         <div className="space-y-3">
-          <Label>¿Tienes alguna discapacidad?</Label>
+          <Label>¿Tienes alguna discapacidad? *</Label>
           <DisabilityMultiSelect
             selected={data.discapacidades || []}
             onSelectionChange={handleDiscapacidadesChange}
@@ -335,6 +343,9 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
             isOpen={openPopover === 'disabilities'}
             onOpenChange={(open) => setOpenPopover(open ? 'disabilities' : null)}
           />
+          {isDiscapacidadObligatoria && (
+            <p className="text-xs text-[#c0392b]">Selecciona al menos una discapacidad</p>
+          )}
 
           {data.discapacidades?.includes("Otro") && (
             <div className="space-y-2">
@@ -344,15 +355,22 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
                 value={data.discapacidadOtra || ""}
                 onChange={(e) => onChange({ ...data, discapacidadOtra: e.target.value })}
                 placeholder="Describe la discapacidad"
-                className={cn("transition-colors", data.discapacidadOtra ? "border-green-500" : "border-[#c0392b]")}
+                className={cn(
+                  "transition-colors",
+                  (data.discapacidadOtra ? "border-green-500" : "border-[#c0392b]"),
+                  isDiscapacidadOtraObligatoria && "border-[#c0392b] focus:border-[#c0392b]"
+                )}
               />
+              {isDiscapacidadOtraObligatoria && (
+                <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>
+              )}
             </div>
           )}
         </div>
 
         {/* Lenguas indígenas de los padres */}
         <div className="space-y-3">
-          <Label>¿Qué lenguas indígenas hablan tus padres?</Label>
+          <Label>¿Qué lenguas indígenas hablan tus padres? *</Label>
           {loading ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -371,6 +389,9 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
               onOpenChange={(open) => setOpenPopover(open ? 'parentLanguages' : null)}
             />
           )}
+          {isLenguasPadresObligatoria && (
+            <p className="text-xs text-[#c0392b]">Selecciona al menos una lengua</p>
+          )}
 
           {data.lenguasIndigenasPadres?.includes("Otro o varias") && (
             <div className="space-y-2">
@@ -382,16 +403,20 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
                 placeholder="Especifica las lenguas indígenas"
                 className={cn(
                   "transition-colors",
-                  data.lenguasIndigenasPadresOtra ? "border-green-500" : "border-[#c0392b]",
+                  (data.lenguasIndigenasPadresOtra ? "border-green-500" : "border-[#c0392b]"),
+                  isLenguasPadresOtraObligatoria && "border-[#c0392b] focus:border-[#c0392b]"
                 )}
               />
+              {isLenguasPadresOtraObligatoria && (
+                <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>
+              )}
             </div>
           )}
         </div>
 
         {/* Lenguas indígenas personales */}
         <div className="space-y-3">
-          <Label>¿Hablas alguna lengua indígena?</Label>
+          <Label>¿Hablas alguna lengua indígena? *</Label>
           {loading ? (
             <div className="flex items-center gap-2 text-muted-foreground">
               <RefreshCw className="h-4 w-4 animate-spin" />
@@ -410,6 +435,9 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
               onOpenChange={(open) => setOpenPopover(open ? 'personalLanguages' : null)}
             />
           )}
+          {isLenguasPersonalesObligatoria && (
+            <p className="text-xs text-[#c0392b]">Selecciona al menos una lengua</p>
+          )}
 
           {data.lenguasIndigenasPersonales?.includes("Otro o varias") && (
             <div className="space-y-2">
@@ -421,9 +449,13 @@ export default function ComplementariosComponent({ data, onChange }: Complementa
                 placeholder="Especifica las lenguas indígenas que hablas"
                 className={cn(
                   "transition-colors",
-                  data.lenguasIndigenasPersonalesOtra ? "border-green-500" : "border-[#c0392b]",
+                  (data.lenguasIndigenasPersonalesOtra ? "border-green-500" : "border-[#c0392b]"),
+                  isLenguasPersonalesOtraObligatoria && "border-[#c0392b] focus:border-[#c0392b]"
                 )}
               />
+              {isLenguasPersonalesOtraObligatoria && (
+                <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>
+              )}
             </div>
           )}
         </div>
