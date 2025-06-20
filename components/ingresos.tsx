@@ -85,11 +85,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
             onChange={(e) => handleNumericInput("ingresoFamiliar", e.target.value, 5)}
             className={cn(
               "transition-colors",
-              errors.ingresoFamiliar
+              (!data.ingresoFamiliar || errors.ingresoFamiliar)
                 ? "border-[#c0392b] focus:border-[#c0392b]"
                 : data.ingresoFamiliar
                   ? "border-green-500"
-                  : "",
+                  : ""
             )}
             placeholder="Ingreso en pesos mexicanos"
             maxLength={5}
@@ -157,11 +157,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                   onChange={(e) => handleNumericInput("lada", e.target.value, 3)}
                   className={cn(
                     "transition-colors",
-                    errors.lada
+                    (!data.lada || errors.lada)
                       ? "border-[#c0392b] focus:border-[#c0392b]"
                       : data.lada && data.lada.length === 3
                         ? "border-green-500"
-                        : "",
+                        : ""
                   )}
                   placeholder="777"
                   maxLength={3}
@@ -177,11 +177,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                   onChange={(e) => handleNumericInput("telefono", e.target.value, 7)}
                   className={cn(
                     "transition-colors",
-                    errors.telefono
+                    (!data.telefono || errors.telefono)
                       ? "border-[#c0392b] focus:border-[#c0392b]"
                       : data.telefono && data.telefono.length === 7
                         ? "border-green-500"
-                        : "",
+                        : ""
                   )}
                   placeholder="1234567"
                   maxLength={7}
@@ -197,11 +197,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                   onChange={(e) => handleNumericInput("ingresoMensual", e.target.value, 5)}
                   className={cn(
                     "transition-colors",
-                    errors.ingresoMensual
+                    (!data.ingresoMensual || errors.ingresoMensual)
                       ? "border-[#c0392b] focus:border-[#c0392b]"
                       : data.ingresoMensual
                         ? "border-green-500"
-                        : "",
+                        : ""
                   )}
                   placeholder="Pesos mexicanos"
                   maxLength={5}
@@ -220,11 +220,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                   onChange={(e) => validateField("nombreEmpresa", e.target.value)}
                   className={cn(
                     "transition-colors",
-                    errors.nombreEmpresa
+                    (!data.nombreEmpresa || errors.nombreEmpresa)
                       ? "border-[#c0392b] focus:border-[#c0392b]"
                       : data.nombreEmpresa && data.nombreEmpresa.length >= 5
                         ? "border-green-500"
-                        : "",
+                        : ""
                   )}
                   placeholder="Nombre de la empresa"
                   maxLength={50}
@@ -240,7 +240,11 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                   onChange={(e) => validateField("puesto", e.target.value)}
                   className={cn(
                     "transition-colors",
-                    errors.puesto ? "border-[#c0392b] focus:border-[#c0392b]" : data.puesto ? "border-green-500" : "",
+                    (!data.puesto || errors.puesto)
+                      ? "border-[#c0392b] focus:border-[#c0392b]"
+                      : data.puesto
+                        ? "border-green-500"
+                        : ""
                   )}
                   placeholder="Tu puesto de trabajo"
                   maxLength={50}
@@ -256,7 +260,10 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
                 id="horario"
                 value={data.horario || ""}
                 onChange={(e) => onChange({ ...data, horario: e.target.value })}
-                className={cn("transition-colors", data.horario ? "border-green-500" : "")}
+                className={cn(
+                  "transition-colors",
+                  !data.horario ? "border-[#c0392b] focus:border-[#c0392b]" : "border-green-500"
+                )}
                 placeholder="Ej: 7:00 - 15:00"
               />
               <p className="text-xs text-[#888888]">Formato sugerido: HH:MM - HH:MM</p>
