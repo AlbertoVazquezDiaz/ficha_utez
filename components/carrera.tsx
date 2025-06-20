@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -15,25 +14,23 @@ import { cn } from "@/lib/utils";
 interface CarreraProps {
   data: any;
   onChange: (data: any) => void;
+  showValidationErrors?: boolean;
 }
 
-const opcionesUTEZ = [
-  "Primera opción",
-  "Segunda opción",
-  "Tercera opción",
-  "Cuarta opción",
-  "Quinta opción",
-  "Otra",
-];
+const opcionesUTEZ = ["Primera opción", "Segunda opción"];
 
-export default function CarreraComponent({ data, onChange }: CarreraProps) {
+export default function CarreraComponent({
+  data,
+  onChange,
+  showValidationErrors = false,
+}: CarreraProps) {
   const [carreras, setCarreras] = useState([]);
   const [mediosDifusion, setMediosDifusion] = useState([]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch("http://192.168.0.103:8080/api/fichas-utez/school-careers", {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/school-careers`, {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -52,7 +49,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("http://192.168.0.103:8080/api/fichas-utez/media-channels", {
+    fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/media-channels`, {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -89,7 +86,11 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
             <SelectTrigger
               className={cn(
                 "transition-colors",
-                data.carreraInteres ? "border-green-500" : "border-[#c0392b]",
+                data.carreraInteres
+                  ? "border-green-500"
+                  : showValidationErrors
+                    ? "border-[#c0392b]"
+                    : "",
               )}
             >
               <SelectValue placeholder="Selecciona la carrera de tu interés" />
@@ -119,15 +120,17 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
               onChange({
                 ...data,
                 medioDifusion: value,
-                medioDifusionOtro:
-                  value === "Otro" ? data.medioDifusionOtro : "",
               })
             }
           >
             <SelectTrigger
               className={cn(
                 "transition-colors",
-                data.medioDifusion ? "border-green-500" : "border-[#c0392b]",
+                data.medioDifusion
+                  ? "border-green-500"
+                  : showValidationErrors
+                    ? "border-[#c0392b]"
+                    : "",
               )}
             >
               <SelectValue placeholder="Selecciona el medio por el cual conociste la UTEZ" />
@@ -146,26 +149,6 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
               )}
             </SelectContent>
           </Select>
-
-          {data.medioDifusion === "Otro" && (
-            <div className="space-y-2">
-              <Label htmlFor="medioDifusionOtro">Especifica el medio *</Label>
-              <Input
-                id="medioDifusionOtro"
-                value={data.medioDifusionOtro || ""}
-                onChange={(e) =>
-                  onChange({ ...data, medioDifusionOtro: e.target.value })
-                }
-                className={cn(
-                  "transition-colors",
-                  data.medioDifusionOtro
-                    ? "border-green-500"
-                    : "border-[#c0392b]",
-                )}
-                placeholder="Especifica por qué medio te enteraste"
-              />
-            </div>
-          )}
         </div>
 
         {/* Opción UTEZ */}
@@ -177,14 +160,17 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
               onChange({
                 ...data,
                 opcionUTEZ: value,
-                opcionUTEZOtra: value === "Otra" ? data.opcionUTEZOtra : "",
               })
             }
           >
             <SelectTrigger
               className={cn(
                 "transition-colors",
-                data.opcionUTEZ ? "border-green-500" : "border-[#c0392b]",
+                data.opcionUTEZ
+                  ? "border-green-500"
+                  : showValidationErrors
+                    ? "border-[#c0392b]"
+                    : "",
               )}
             >
               <SelectValue placeholder="Selecciona qué opción representa la UTEZ para ti" />
@@ -197,24 +183,6 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
               ))}
             </SelectContent>
           </Select>
-
-          {data.opcionUTEZ === "Otra" && (
-            <div className="space-y-2">
-              <Label htmlFor="opcionUTEZOtra">Especifica la opción *</Label>
-              <Input
-                id="opcionUTEZOtra"
-                value={data.opcionUTEZOtra || ""}
-                onChange={(e) =>
-                  onChange({ ...data, opcionUTEZOtra: e.target.value })
-                }
-                className={cn(
-                  "transition-colors",
-                  data.opcionUTEZOtra ? "border-green-500" : "border-[#c0392b]",
-                )}
-                placeholder="Especifica qué opción es la UTEZ para ti"
-              />
-            </div>
-          )}
         </div>
 
         {/* Información adicional */}
