@@ -26,7 +26,9 @@ export default function IndigenousLanguagesSelect() {
       try {
         setLoading(true)
         setError(null)
-        const response = await fetch("http://192.168.0.101:8080/api/fichas-utez/api/indigenous-languages")
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        const endpoint = "/indigenous-languages";
+        const response = await fetch(`${baseUrl}${endpoint}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

@@ -267,7 +267,7 @@ export default function ComplementariosComponent({ data, onChange, showErrors = 
           throw new Error("La URL base de la API no está configurada. Verifica la variable de entorno NEXT_PUBLIC_API_BASE_URL.")
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/indigenous-languages`)
+        const response = await fetch(`${API_BASE_URL}/indigenous-languages`)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
