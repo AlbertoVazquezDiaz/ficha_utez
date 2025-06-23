@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { fetchNacionalidades } from "../../lib/api-datos-generales"
+
 
 export interface FormData {
   datosGenerales: {
@@ -216,8 +218,8 @@ export function useFormData() {
     let totalRequired = 0
 
     const { datosGenerales, domicilio, ingresos, carrera, antecedentes } = formData
-
-    const isExtranjero = datosGenerales.nacionalidad.toLowerCase() === "extranjero(a)"
+    
+    const isExtranjero = datosGenerales.nacionalidad === "2"
     const trabaja = ingresos.trabajas.toLowerCase() === "sí" || ingresos.trabajas.toLowerCase() === "si"
     const tieneBeca = antecedentes.tieneBeca.toLowerCase() === "sí" || antecedentes.tieneBeca.toLowerCase() === "si"
 
@@ -290,7 +292,6 @@ export function useFormData() {
 
     return Math.round((completedFields / totalRequired) * 100)
   }, [formData])
-
   return {
     formData,
     updateFormData,
@@ -298,3 +299,85 @@ export function useFormData() {
     getProgress,
   }
 }
+
+function safeNumber(value: string | null | undefined): number | null {
+  if (value === null || value === undefined) return null
+  const n = Number(value)
+  return !isNaN(n) && n > 0 ? n : null
+}
+
+function cleanArrayIds(arr: (string | null | undefined)[]): number[] {
+  return arr
+    .map((id) => Number(id))
+    .filter((n) => !isNaN(n) && n > 0)
+}
+
+export function mapFormDataToDto(formData: FormData) {
+  return {
+    firstName: formData.datosGenerales.nombre,
+    lastName: formData.datosGenerales.primerApellido,
+    motherLastName: formData.datosGenerales.segundoApellido,
+    curp: formData.datosGenerales.curp.toUpperCase(),
+    birthDate: formData.datosGenerales.fechaNacimiento,
+    gender: formData.datosGenerales.sexo,
+    nationalityId: safeNumber(formData.datosGenerales.nacionalidad),
+    birthStateId: safeNumber(formData.datosGenerales.estadoNacimiento),
+    birthMunicipalityId: safeNumber(formData.datosGenerales.municipioNacimiento),
+    birthCountryId: safeNumber(formData.datosGenerales.paisNacimiento),
+    birthForeignState: formData.datosGenerales.estadoNacimientoExtranjero,
+    birthCity: formData.datosGenerales.ciudadNacimiento,
+    civilStatusId: safeNumber(formData.datosGenerales.estadoCivil),
+    nativeLanguageId: safeNumber(formData.datosGenerales.lenguaNatal),
+    hasChildren: ["si", "sí"].includes(formData.datosGenerales.tieneHijos.toLowerCase()),
+
+    street: formData.domicilio.calle,
+    exteriorNumber: formData.domicilio.numeroExterior,
+    interiorNumber: formData.domicilio.numeroInterior,
+    neighborhood: formData.domicilio.colonia,
+    addressStateId: safeNumber(formData.domicilio.estado),
+    addressMunicipalityId: safeNumber(formData.domicilio.municipio),
+    addressLocality: formData.domicilio.localidad,
+    postalCode: formData.domicilio.codigoPostal,
+    email: formData.domicilio.email,
+
+    lada: formData.ingresos.lada,
+    homePhone: formData.ingresos.telefono,
+    mobilePhone: formData.ingresos.telefono,
+
+    familyMonthlyIncome: parseFloat(formData.ingresos.ingresoFamiliar) || 0,
+    works: ["si", "sí"].includes(formData.ingresos.trabajas.toLowerCase()),
+    workType: formData.ingresos.tipoTrabajo,
+    workLada: formData.ingresos.lada,
+    workPhone: formData.ingresos.telefono,
+    monthlyIncome: parseFloat(formData.ingresos.ingresoMensual) || 0,
+    companyName: formData.ingresos.nombreEmpresa,
+    jobPosition: formData.ingresos.puesto,
+
+    careerId: safeNumber(formData.carrera.carreraInteres),
+    mediaChannelId: safeNumber(formData.carrera.medioDifusion),
+    otherMediaChannel: formData.carrera.medioDifusionOtro,
+    utezOption: formData.carrera.opcionUTEZ,
+    otherUtezOption: formData.carrera.opcionUTEZOtra,
+
+    highSchoolTypeId: safeNumber(formData.antecedentes.tipoPrepa),
+    otherHighSchoolType: formData.antecedentes.tipoPrepaOtra,
+    highSchoolName: formData.antecedentes.nombrePrepa,
+    highSchoolCct: formData.antecedentes.claveCCT,
+    highSchoolStateId: safeNumber(formData.antecedentes.estado),
+    highSchoolMunicipalityId: safeNumber(formData.antecedentes.municipio),
+    average: parseFloat(formData.antecedentes.promedio) || 0,
+    hasScholarship: ["si", "sí"].includes(formData.antecedentes.tieneBeca.toLowerCase()),
+    scholarshipName: formData.antecedentes.nombreBeca,
+
+    indigenousLanguageIds: cleanArrayIds(formData.complementarios.lenguasIndigenasPersonales),
+    disabilityIds: cleanArrayIds(formData.complementarios.discapacidades),
+    highSchoolId: safeNumber(formData.antecedentes.nombrePrepa) || null, // Solo si aplicara
+    schoolCareerId: safeNumber(formData.carrera.carreraInteres),
+    phone: formData.ingresos.telefono,
+    address: `${formData.domicilio.calle} ${formData.domicilio.numeroExterior}`,
+    parentsIndigenousLanguageIds: cleanArrayIds(formData.complementarios.lenguasIndigenasPadres),
+  }
+}
+
+
+

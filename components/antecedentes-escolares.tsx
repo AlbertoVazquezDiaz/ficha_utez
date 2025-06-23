@@ -49,7 +49,7 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
 
   // Cargar municipios cuando cambia el estado
   useEffect(() => {
-    const estadoObj = estados.find((e) => e.name === data.estado)
+  const estadoObj = estados.find((e) => e.id === data.estado)
     if (estadoObj) {
       setLoadingMunicipios(true)
       setMunicipios([])
@@ -146,7 +146,7 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
             <SelectContent>
               {errorTiposPrepa && <SelectItem value="error" disabled>{errorTiposPrepa}</SelectItem>}
               {tiposPrepa.map((tipo) => (
-                <SelectItem key={tipo.id} value={tipo.name}>
+                <SelectItem key={tipo.id} value={tipo.id}>
                   {tipo.name}
                   {tipo.abrevation && (
                     <span className="ml-2 text-xs text-gray-400">({tipo.abrevation})</span>
@@ -251,7 +251,7 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
               <SelectContent>
                 {errorEstados && <SelectItem value="" disabled>{errorEstados}</SelectItem>}
                 {estados.map((estado) => (
-                  <SelectItem key={estado.id} value={estado.name}>
+                  <SelectItem key={estado.id} value={estado.id}>
                     {estado.name}
                   </SelectItem>
                 ))}
@@ -291,7 +291,7 @@ export default function AntecedentesEscolaresComponent({ data, onChange }: Antec
                     {municipios
                       .filter((municipio) => municipio && municipio.name && municipio.name.trim() !== "")
                       .map((municipio) => (
-                        <SelectItem key={municipio.id} value={municipio.name}>
+                        <SelectItem key={municipio.id} value={municipio.id}>
                           {municipio.name}
                         </SelectItem>
                       ))}
