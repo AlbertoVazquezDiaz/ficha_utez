@@ -42,7 +42,7 @@ export async function fetchEstadosPorPais(countryId: number = 1): Promise<Estado
 
 export async function fetchEstadosCiviles(): Promise<EstadoCivil[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/civil-status`)
+    const res = await fetch(`${API_BASE}/civil-status`)
     if (!res.ok) throw new Error("No se pudieron obtener los estados civiles")
     const json = await res.json()
     
@@ -60,7 +60,7 @@ export async function fetchEstadosCiviles(): Promise<EstadoCivil[]> {
 
 export async function fetchLenguasNatales(): Promise<LenguaNatal[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/native-languages`)
+    const res = await fetch(`${API_BASE}/native-languages`)
     if (!res.ok) throw new Error("No se pudieron obtener las lenguas natales")
     const json = await res.json()
     
