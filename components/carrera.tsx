@@ -34,7 +34,6 @@ export default function CarreraComponent({
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log("Carreras recibidas:", data); // 🐞 Debug
         setCarreras(Array.isArray(data.data) ? data.data : []);
       })
       .catch((err) => {

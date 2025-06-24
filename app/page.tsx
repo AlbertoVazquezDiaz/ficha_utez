@@ -49,14 +49,12 @@ export default function AdmissionForm() {
   }
 
   const submitedRegister = () => {
-      console.log("Formulario enviado:", formData)
+    console.log("Submitting form data:", formData);
       const dto = mapFormDataToDto(formData)
-      console.log("DTO a enviar:", dto);
       if(dto.nationalityId==1){
         dto.birthCountryId = 1
       }
-      console.log(dto,' Con pais');
-      
+      console.log("DTO to be sent:", dto);
       
       fetch(API_BASE_URL+'/user-registration-forms', {
         method: "POST",
@@ -72,7 +70,6 @@ export default function AdmissionForm() {
           return response.json()
         })
         .then((data) => {
-          console.log("Respuesta del servidor:", data)
           alert(`Formulario enviado exitosamente`)
         })
         .catch((error) => {

@@ -359,39 +359,33 @@ const validators: { [field: string]: (value: any, data: any) => boolean } = {
   discapacidadOtra: (value, data) => {
     const isRequired = data.discapacidades?.includes("Otro")
     const isValid = !isRequired || (typeof value === "string" && value.trim().length > 0)
-    console.log(`[VALIDACIÓN] discapacidadOtra | Requerido: ${isRequired} | Valor: "${value}" | Válido: ${isValid}`)
     return isValid
   },
 
   lenguasIndigenasPadresOtra: (value, data) => {
     const isRequired = data.lenguasIndigenasPadres?.includes("otro")
     const isValid = !isRequired || (typeof value === "string" && value.trim().length > 0)
-    console.log(`[VALIDACIÓN] lenguasIndigenasPadresOtra | Requerido: ${isRequired} | Valor: "${value}" | Válido: ${isValid}`)
     return isValid
   },
 
   lenguasIndigenasPersonalesOtra: (value, data) => {
     const isRequired = data.lenguasIndigenasPersonales?.includes("otro")
     const isValid = !isRequired || (typeof value === "string" && value.trim().length > 0)
-    console.log(`[VALIDACIÓN] lenguasIndigenasPersonalesOtra | Requerido: ${isRequired} | Valor: "${value}" | Válido: ${isValid}`)
     return isValid
   },
 
   discapacidades: (value) => {
     const isValid = Array.isArray(value) && value.length > 0
-    console.log(`[VALIDACIÓN] discapacidades | Seleccionadas: ${value?.length || 0} | Válido: ${isValid}`)
     return isValid
   },
 
   lenguasIndigenasPadres: (value) => {
     const isValid = Array.isArray(value) && value.length > 0
-    console.log(`[VALIDACIÓN] lenguasIndigenasPadres | Seleccionadas: ${value?.length || 0} | Válido: ${isValid}`)
     return isValid
   },
 
   lenguasIndigenasPersonales: (value) => {
     const isValid = Array.isArray(value) && value.length > 0
-    console.log(`[VALIDACIÓN] lenguasIndigenasPersonales | Seleccionadas: ${value?.length || 0} | Válido: ${isValid}`)
     return isValid
   }
 }

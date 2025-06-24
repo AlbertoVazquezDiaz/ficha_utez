@@ -29,9 +29,9 @@ export async function fetchMunicipiosPorEstado(stateId: number): Promise<Municip
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const endpoint = `/municipalities/state/${stateId}`;
   const res = await fetch(`${baseUrl}${endpoint}`)
+  
   if (!res.ok) throw new Error("No se pudieron obtener los municipios")
   const data = await res.json()
-  console.log(data);
 
   if (!Array.isArray(data.data)) throw new Error("Formato inesperado de respuesta de municipios")
   return data.data.map((municipio: any) => ({ id: municipio.id, name: municipio.name }))

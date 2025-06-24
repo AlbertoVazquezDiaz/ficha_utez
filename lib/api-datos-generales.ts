@@ -1,3 +1,5 @@
+import { log } from "console";
+
 export interface Nacionalidad {
   id: number;
   name: string;
@@ -18,12 +20,15 @@ export interface LenguaNatal {
   name: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.0.103:8080/api/fichas-utez"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/fichas-utez"
 
 export async function fetchNacionalidades(): Promise<Nacionalidad[]> {
   const res = await fetch(`${API_BASE}/nationalities`)
+  console.log(res);
   if (!res.ok) throw new Error("No se pudieron obtener las nacionalidades")
   const json = await res.json()
+  console.log("Respuesta de nacionalidades:", json);
+  
   if (!json.data || !Array.isArray(json.data)) {
     throw new Error("La respuesta no contiene un array válido en data")
   }
