@@ -33,7 +33,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch("http://192.168.0.103:8080/api/fichas-utez/school-careers", {
+    fetch("http://localhost:8080/api/fichas-utez/school-careers", {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -52,7 +52,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("http://192.168.0.103:8080/api/fichas-utez/media-channels", {
+    fetch("http://localhost:8080/api/fichas-utez/media-channels", {
       signal: controller.signal,
     })
       .then((res) => res.json())
@@ -97,7 +97,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
             <SelectContent>
               {carreras.length > 0 ? (
                 carreras.map((carrera) => (
-                  <SelectItem key={carrera.id} value={carrera.name}>
+                  <SelectItem key={carrera.id} value={carrera.id}>
                     {carrera.name}
                   </SelectItem>
                 ))
@@ -135,7 +135,7 @@ export default function CarreraComponent({ data, onChange }: CarreraProps) {
             <SelectContent>
               {mediosDifusion.length > 0 ? (
                 mediosDifusion.map((medio) => (
-                  <SelectItem key={medio.id} value={medio.name}>
+                  <SelectItem key={medio.id} value={medio.id}>
                     {medio.name}
                   </SelectItem>
                 ))

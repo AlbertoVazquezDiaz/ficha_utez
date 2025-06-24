@@ -139,3 +139,66 @@ export {
   AlertDialogAction,
   AlertDialogCancel,
 }
+
+
+import { CheckCircle, XCircle, AlertTriangle } from "lucide-react"
+
+type AlertDialogType = "success" | "error" | "confirm"
+
+interface EnhancedAlertDialogProps {
+  open: boolean
+  type?: AlertDialogType
+  title: string
+  description: string
+  onConfirm: () => void
+  onCancel?: () => void // opcional, solo para tipo confirm
+}
+
+export function AlertDialogEnhanced({
+  open,
+  type = "confirm",
+  title,
+  description,
+  onConfirm,
+  onCancel,
+}: EnhancedAlertDialogProps) {
+  const icon =
+    type === "success" ? (
+      <CheckCircle className="text-green-500 w-12 h-12 mx-auto" />
+    ) : type === "error" ? (
+      <XCircle className="text-red-500 w-12 h-12 mx-auto" />
+    ) : (
+      <AlertTriangle className="text-yellow-500 w-12 h-12 mx-auto" />
+    )
+
+  return (
+    <AlertDialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen && type !== "confirm") onConfirm()
+      }}>
+      <AlertDialogContent>
+        <AlertDialogHeader className="items-center">
+          {icon}
+          <AlertDialogTitle className="text-center">{title}</AlertDialogTitle>
+          <AlertDialogDescription className="text-center">{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogAction
+            className={cn(
+              "text-white",
+              type === "success" && "bg-green-600 hover:bg-green-700",
+              type === "error" && "bg-red-600 hover:bg-red-700",
+              type === "confirm" && "bg-yellow-500 hover:bg-yellow-600"
+            )}
+            onClick={onConfirm}
+          >
+            {type === "confirm" ? "Confirmar" : "Aceptar"}
+          </AlertDialogAction>
+          {type === "confirm" && onCancel && (
+            <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
+          )}
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
