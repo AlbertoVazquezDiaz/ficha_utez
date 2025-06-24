@@ -36,8 +36,8 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
       return
     }
     setLoadingMunicipios(true)
-    const estadoObj = estados.find(e => e.name === data.estado)
-    if (!estadoObj) {
+    const estadoObj = estados.find(e => e.id === data.estado)
+    if (!estadoObj) {   
       setMunicipios([])
       setLoadingMunicipios(false)
       return
@@ -80,6 +80,150 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
     onChange({ ...data, [name]: value })
   }
 
+  // Estado reactivo para el estado visual de cada campo
+  const [formState, setFormState] = useState<Record<string, { touched: boolean; valid: boolean; error: boolean }>>({})
+
+  // Inicializa formState para los campos relevantes
+  useEffect(() => {
+    const fields = [
+      "calle",
+      "numeroExterior",
+      "colonia",
+      "estado",
+      "municipio",
+      "codigoPostal",
+      "email",
+      // opcionales:
+      "numeroInterior",
+      "localidad",
+    ]
+    setFormState((prev) => {
+      const next: typeof prev = { ...prev }
+      fields.forEach((f) => {
+        if (!next[f]) {
+          next[f] = { touched: false, valid: false, error: false }
+        }
+      })
+      return next
+    })
+  }, [])
+
+  // Validación de
+  // Handler para onBlur
+  const handleBlur = (name: string, value: string) => {
+    setFormState((prev) => {
+      const { valid, error } = validateFieldState(name, value)
+      return {
+        ...prev,
+        [name]: {
+          touched: true,
+          valid,
+          error: !valid,
+        },
+      }
+    })
+  }
+
+  // Helper para validar el estado de un campo
+  const validateFieldState = (name: string, value: string): { valid: boolean; error: string | null } => {
+    switch (name) {
+      case "codigoPostal":
+        if (!/^\d{5}$/.test(value)) {
+          return { valid: false, error: "Debe tener exactamente 5 dígitos" }
+        }
+        return { valid: true, error: null }
+      case "email":
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if (!emailRegex.test(value)) {
+          return { valid: false, error: "Formato de email inválido" }
+        }
+        return { valid: true, error: null }
+      case "numeroInterior":
+      case "localidad":
+        // Opcionales: si están vacíos, son válidos
+        if (typeof value !== 'string' || !value.trim()) {
+          return { valid: true, error: null }
+        }
+        return { valid: true, error: null }
+      default:
+        if (typeof value !== 'string' || !value.trim()) {
+          return { valid: false, error: "Este campo es obligatorio" }
+        }
+        return { valid: true, error: null }
+    }
+  }
+
+  // Handler para onChange
+  const handleChange = (name: string, value: string) => {
+    const { valid } = validateFieldState(name, value)
+    setFormState((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        valid,
+        error: prev[name]?.touched ? !valid : false,
+      },
+    }))
+    onChange({ ...data, [name]: value })
+  }
+
+  // Handler para onFocus (opcional, por si quieres marcar touched en focus)
+  const handleFocus = (name: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        touched: true,
+      },
+    }))
+  }
+
+  // Validar todos los campos obligatorios al intentar enviar
+  const validateAllOnSubmit = () => {
+    const requiredFields = [
+      "calle",
+      "numeroExterior",
+      "colonia",
+      "estado",
+      "municipio",
+      "codigoPostal",
+      "email",
+    ]
+    setFormState((prev) => {
+      const next = { ...prev }
+      requiredFields.forEach((name) => {
+        const value = data[name] || ""
+        const { valid } = validateFieldState(name, value)
+        next[name] = {
+          touched: true,
+          valid,
+          error: !valid,
+        }
+      })
+      // Opcionales: si tienen valor, validar
+      ;["numeroInterior", "localidad"].forEach((name) => {
+        const value = data[name] || ""
+        if (value.trim() !== "") {
+          next[name] = {
+            touched: true,
+            valid: true,
+            error: false,
+          }
+        }
+      })
+      return next
+    })
+  }
+
+  // Helper para clases visuales
+  const getInputClass = (name: string) => {
+    const state = formState[name]
+    if (!state || !state.touched) return "transition-colors"
+    if (state.error) return "transition-colors border-[#c0392b] focus:border-[#c0392b]"
+    if (state.valid) return "transition-colors border-green-500"
+    return "transition-colors"
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -92,41 +236,35 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
         {/* Dirección */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="calle">Calle *</Label>
+            <Label htmlFor="calle">
+              Calle <span className="text-red-600">*</span>
+            </Label>
             <Input
               id="calle"
               value={data.calle || ""}
-              onChange={(e) => validateField("calle", e.target.value)}
-              className={cn(
-                "transition-colors",
-                (!data.calle || errors.calle)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.calle.length > 0
-                    ? "border-green-500"
-                    : ""
-              )}
+              onChange={(e) => handleChange("calle", e.target.value)}
+              onBlur={(e) => handleBlur("calle", e.target.value)}
+              onFocus={() => handleFocus("calle")}
+              className={getInputClass("calle")}
               placeholder="Nombre de la calle"
             />
-            {errors.calle && <p className="text-xs text-[#c0392b]">{errors.calle}</p>}
+            {formState.calle?.error && <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="numeroExterior">Número Exterior *</Label>
+            <Label htmlFor="numeroExterior">
+              Número Exterior <span className="text-red-600">*</span>
+            </Label>
             <Input
               id="numeroExterior"
               value={data.numeroExterior || ""}
-              onChange={(e) => validateField("numeroExterior", e.target.value)}
-              className={cn(
-                "transition-colors",
-                (!data.numeroExterior || errors.numeroExterior)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.numeroExterior.length > 0
-                    ? "border-green-500"
-                    : ""
-              )}
+              onChange={(e) => handleChange("numeroExterior", e.target.value)}
+              onBlur={(e) => handleBlur("numeroExterior", e.target.value)}
+              onFocus={() => handleFocus("numeroExterior")}
+              className={getInputClass("numeroExterior")}
               placeholder="Núm. exterior"
             />
-            {errors.numeroExterior && <p className="text-xs text-[#c0392b]">{errors.numeroExterior}</p>}
+            {formState.numeroExterior?.error && <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>}
           </div>
 
           <div className="space-y-2">
@@ -134,7 +272,10 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
             <Input
               id="numeroInterior"
               value={data.numeroInterior || ""}
-              onChange={(e) => onChange({ ...data, numeroInterior: e.target.value })}
+              onChange={(e) => handleChange("numeroInterior", e.target.value)}
+              onBlur={(e) => handleBlur("numeroInterior", e.target.value)}
+              onFocus={() => handleFocus("numeroInterior")}
+              className={getInputClass("numeroInterior")}
               placeholder="Núm. interior (opcional)"
             />
           </div>
@@ -143,22 +284,19 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
         {/* Colonia y Localidad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="colonia">Colonia *</Label>
+            <Label htmlFor="colonia">
+              Colonia <span className="text-red-600">*</span>
+            </Label>
             <Input
               id="colonia"
               value={data.colonia || ""}
-              onChange={(e) => validateField("colonia", e.target.value)}
-              className={cn(
-                "transition-colors",
-                (!data.colonia || errors.colonia)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.colonia.length > 0
-                    ? "border-green-500"
-                    : ""
-              )}
+              onChange={(e) => handleChange("colonia", e.target.value)}
+              onBlur={(e) => handleBlur("colonia", e.target.value)}
+              onFocus={() => handleFocus("colonia")}
+              className={getInputClass("colonia")}
               placeholder="Nombre de la colonia"
             />
-            {errors.colonia && <p className="text-xs text-[#c0392b]">{errors.colonia}</p>}
+            {formState.colonia?.error && <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>}
           </div>
 
           <div className="space-y-2">
@@ -166,7 +304,10 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
             <Input
               id="localidad"
               value={data.localidad || ""}
-              onChange={(e) => onChange({ ...data, localidad: e.target.value })}
+              onChange={(e) => handleChange("localidad", e.target.value)}
+              onBlur={(e) => handleBlur("localidad", e.target.value)}
+              onFocus={() => handleFocus("localidad")}
+              className={getInputClass("localidad")}
               placeholder="Localidad (opcional)"
             />
           </div>
@@ -175,17 +316,19 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
         {/* Estado y Municipio */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Estado *</Label>
+            <Label>
+              Estado <span className="text-red-600">*</span>
+            </Label>
             <Select
               value={data.estado || ""}
-              onValueChange={(value) => onChange({ ...data, estado: value, municipio: "" })}
+              onValueChange={(value) => {
+                handleChange("estado", value)
+                onChange({ ...data, estado: value, municipio: "" })
+              }}
+              onBlur={() => handleBlur("estado", data.estado || "")}
+              onFocus={() => handleFocus("estado")}
             >
-              <SelectTrigger className={cn(
-                "transition-colors",
-                (!data.estado)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : "border-green-500"
-              )}>
+              <SelectTrigger className={getInputClass("estado")}>
                 <SelectValue placeholder={loadingEstados ? "Cargando..." : "Selecciona el estado"} />
               </SelectTrigger>
               <SelectContent>
@@ -195,28 +338,28 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
                   <SelectItem value="error" disabled>Error al cargar</SelectItem>
                 ) : (
                   estados.map((estado) => (
-                    <SelectItem key={estado.id} value={estado.name}>
+                    <SelectItem key={estado.id} value={estado.id}>
                       {estado.name}
                     </SelectItem>
                   ))
                 )}
               </SelectContent>
             </Select>
+            {formState.estado?.error && <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>}
           </div>
 
           <div className="space-y-2">
-            <Label>Municipio *</Label>
+            <Label>
+              Municipio <span className="text-red-600">*</span>
+            </Label>
             <Select
               value={data.municipio || ""}
-              onValueChange={(value) => onChange({ ...data, municipio: value })}
+              onValueChange={(value) => handleChange("municipio", value)}
+              onBlur={() => handleBlur("municipio", data.municipio || "")}
+              onFocus={() => handleFocus("municipio")}
               disabled={!data.estado || loadingMunicipios}
             >
-              <SelectTrigger className={cn(
-                "transition-colors",
-                (!data.municipio)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : "border-green-500"
-              )}>
+              <SelectTrigger className={getInputClass("municipio")}>
                 <SelectValue placeholder={loadingMunicipios ? "Cargando..." : "Selecciona el municipio"} />
               </SelectTrigger>
               <SelectContent>
@@ -226,59 +369,54 @@ export default function DomicilioComponent({ data, onChange }: DomicilioProps) {
                   <SelectItem value="error" disabled>Error al cargar</SelectItem>
                 ) : (
                   municipios.map((municipio) => (
-                    <SelectItem key={municipio.id} value={municipio.name}>
+                    <SelectItem key={municipio.id} value={municipio.id}>
                       {municipio.name}
                     </SelectItem>
                   ))
                 )}
               </SelectContent>
             </Select>
+            {formState.municipio?.error && <p className="text-xs text-[#c0392b]">Este campo es obligatorio</p>}
           </div>
         </div>
 
         {/* Código Postal y Email */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="codigoPostal">Código Postal *</Label>
+            <Label htmlFor="codigoPostal">
+              Código Postal <span className="text-red-600">*</span>
+            </Label>
             <Input
               id="codigoPostal"
               value={data.codigoPostal || ""}
               onChange={(e) => {
                 const value = e.target.value.replace(/\D/g, "").slice(0, 5)
-                validateField("codigoPostal", value)
+                handleChange("codigoPostal", value)
               }}
-              className={cn(
-                "transition-colors",
-                (!data.codigoPostal || errors.codigoPostal)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.codigoPostal.length === 5
-                    ? "border-green-500"
-                    : ""
-              )}
+              onBlur={(e) => handleBlur("codigoPostal", e.target.value)}
+              onFocus={() => handleFocus("codigoPostal")}
+              className={getInputClass("codigoPostal")}
               placeholder="12345"
               maxLength={5}
             />
-            {errors.codigoPostal && <p className="text-xs text-[#c0392b]">{errors.codigoPostal}</p>}
+            {formState.codigoPostal?.error && <p className="text-xs text-[#c0392b]">Debe tener exactamente 5 dígitos</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Correo Electrónico *</Label>
+            <Label htmlFor="email">
+              Correo Electrónico <span className="text-red-600">*</span>
+            </Label>
             <Input
               id="email"
               type="email"
               value={data.email || ""}
-              onChange={(e) => validateField("email", e.target.value)}
-              className={cn(
-                "transition-colors",
-                (!data.email || errors.email)
-                  ? "border-[#c0392b] focus:border-[#c0392b]"
-                  : data.email.includes("@") && data.email.length > 4
-                    ? "border-green-500"
-                    : ""
-              )}
+              onChange={(e) => handleChange("email", e.target.value)}
+              onBlur={(e) => handleBlur("email", e.target.value)}
+              onFocus={() => handleFocus("email")}
+              className={getInputClass("email")}
               placeholder="tu@email.com"
             />
-            {errors.email && <p className="text-xs text-[#c0392b]">{errors.email}</p>}
+            {formState.email?.error && <p className="text-xs text-[#c0392b]">Formato de email inválido</p>}
           </div>
         </div>
       </CardContent>

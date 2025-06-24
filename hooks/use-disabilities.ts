@@ -59,10 +59,9 @@ export function useDisabilities(): UseDisabilitiesReturn {
       setIsUsingFallback(false)
 
       // const fullUrl = `${API_BASE_URL}/disabilities`
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.0.101:8080/api/fichas-utez"
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/fichas-utez"
       const fullUrl = `${baseUrl}/disabilities`
 
-      console.log("🔄 Fetching disabilities from:", fullUrl)
 
       // Add timeout and better fetch configuration
       const controller = new AbortController()
@@ -80,16 +79,11 @@ export function useDisabilities(): UseDisabilitiesReturn {
 
       clearTimeout(timeoutId)
 
-      console.log("📡 Response status:", response.status)
-      console.log("📡 Response headers:", Object.fromEntries(response.headers.entries()))
-
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
 
       const apiResponse = await response.json() as ApiResponse
-      console.log("✅ API Response received:", apiResponse)
-
       // Validate data structure
       if (!apiResponse.data || !Array.isArray(apiResponse.data)) {
         throw new Error("La respuesta de la API no contiene un array válido en la propiedad 'data'")
@@ -113,7 +107,6 @@ export function useDisabilities(): UseDisabilitiesReturn {
       }
 
       setDisabilities(validatedData)
-      console.log("✅ Disabilities loaded successfully:", validatedData.length, "items")
     } catch (err) {
       console.error("❌ Error fetching disabilities:", err)
 
@@ -133,9 +126,6 @@ export function useDisabilities(): UseDisabilitiesReturn {
       }
 
       setError(errorMessage)
-
-      // Use fallback data
-      console.log("🔄 Using fallback disabilities data")
       setDisabilities(fallbackDisabilities)
       setIsUsingFallback(true)
     } finally {
@@ -148,7 +138,6 @@ export function useDisabilities(): UseDisabilitiesReturn {
   }, [])
 
   const refetch = () => {
-    console.log("🔄 Refetching disabilities...")
     fetchDisabilities()
   }
 

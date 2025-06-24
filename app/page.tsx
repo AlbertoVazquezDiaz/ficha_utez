@@ -17,7 +17,7 @@ import CarreraComponent from "../components/carrera"
 import AntecedentesEscolaresComponent from "../components/antecedentes-escolares"
 
 // Hook personalizado para el estado del formulario
-import { useFormData } from "./hooks/use-form-data"
+import { useFormData, mapFormDataToDto } from "./hooks/use-form-data"
 
 const tabs = [
   { id: "personal", label: "Información Personal", icon: "👤" },
@@ -29,6 +29,7 @@ export default function AdmissionForm() {
   const [activeTab, setActiveTab] = useState("personal")
   const [isMobile, setIsMobile] = useState(false)
   const { formData, updateFormData, validateSection, getProgress } = useFormData()
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -45,6 +46,36 @@ export default function AdmissionForm() {
     if (currentTabIndex < tabs.length - 1 && canNavigateNext) {
       setActiveTab(tabs[currentTabIndex + 1].id)
     }
+  }
+
+  const submitedRegister = () => {
+    console.log("Submitting form data:", formData);
+      const dto = mapFormDataToDto(formData)
+      if(dto.nationalityId==1){
+        dto.birthCountryId = 1
+      }
+      console.log("DTO to be sent:", dto);
+      
+      fetch(API_BASE_URL+'/user-registration-forms', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dto),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Error al enviar el formulario")
+          }
+          return response.json()
+        })
+        .then((data) => {
+          alert(`Formulario enviado exitosamente`)
+        })
+        .catch((error) => {
+          console.error("Error:", error)
+          alert(`Hubo un error al enviar el formulario ${error}`)
+        })
   }
 
   const handlePrevious = () => {
@@ -182,7 +213,11 @@ export default function AdmissionForm() {
               </div>
 
               {currentTabIndex === tabs.length - 1 ? (
-                <Button className="bg-[#70785b] hover:bg-[#70785b]/90 text-white" disabled={!canNavigateNext}>
+                <Button
+                  className="bg-[#70785b] hover:bg-[#70785b]/90 text-white"
+                  //disabled={!canNavigateNext}
+                  onClick={submitedRegister}
+                >
                   Enviar Solicitud
                 </Button>
               ) : (

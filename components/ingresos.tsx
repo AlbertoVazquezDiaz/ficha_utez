@@ -67,6 +67,103 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
     validateField(name, numericValue)
   }
 
+  // --- Form State ---
+  const [formState, setFormState] = useState<Record<string, { touched: boolean; valid: boolean; error: boolean }>>({})
+
+  // Helper: Check if a value is "empty" (for required fields)
+  const isEmpty = (value: any) =>
+    value === undefined || value === null || (typeof value === "string" && value.trim() === "")
+
+  // Helper: Validation logic per field
+  const getValidation = (field: string, value: any) => {
+    switch (field) {
+      case "ingresoFamiliar":
+      case "ingresoMensual":
+        if (isEmpty(value)) return { valid: false, error: true }
+        if (!/^\d{1,5}$/.test(value)) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "lada":
+        if (isEmpty(value)) return { valid: false, error: true }
+        if (!/^\d{3}$/.test(value)) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "telefono":
+        if (isEmpty(value)) return { valid: false, error: true }
+        if (!/^\d{7}$/.test(value)) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "nombreEmpresa":
+        if (isEmpty(value)) return { valid: false, error: true }
+        if (typeof value !== "string" || value.length < 5 || value.length > 50) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "puesto":
+        if (isEmpty(value)) return { valid: false, error: true }
+        if (typeof value !== "string" || value.length > 50) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "horario":
+        if (isEmpty(value)) return { valid: false, error: true }
+        return { valid: true, error: false }
+      case "trabajas":
+        if (isEmpty(value)) return { valid: false, error: true }
+        return { valid: true, error: false }
+      default:
+        return { valid: true, error: false }
+    }
+  }
+
+  // Update field state (called onChange/onBlur)
+  const updateFieldState = (
+    field: string,
+    value: any,
+    data: any,
+    touched = true
+  ) => {
+    const { valid, error } = getValidation(field, value)
+    setFormState((prev) => ({
+      ...prev,
+      [field]: { touched, valid, error }
+    }))
+    // Optionally, update errors for legacy code
+    validateField(field, value)
+  }
+
+  // Mark all required fields as touched (for submit)
+  const touchAllRequiredFields = () => {
+    const requiredFields = [
+      "ingresoFamiliar",
+      "trabajas",
+      ...(data.trabajas === "si"
+        ? [
+            "lada",
+            "telefono",
+            "ingresoMensual",
+            "nombreEmpresa",
+            "puesto",
+            "horario"
+          ]
+        : [])
+    ]
+    setFormState((prev) => {
+      const next = { ...prev }
+      for (const field of requiredFields) {
+        const { valid, error } = getValidation(field, data[field])
+        next[field] = { touched: true, valid, error }
+      }
+      return next
+    })
+  }
+
+  // --- Handlers ---
+  const handleInputChange = (field: string, value: string, maxLength?: number) => {
+    let newValue = value
+    if (maxLength) newValue = value.replace(/\D/g, "").slice(0, maxLength)
+    onChange({ ...data, [field]: newValue })
+    updateFieldState(field, newValue, { ...data, [field]: newValue })
+  }
+
+  const handleBlur = (field: string) => {
+    updateFieldState(field, data[field], data, true)
+  }
+
+  // --- UI ---
   return (
     <Card>
       <CardHeader>
@@ -78,31 +175,45 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
       <CardContent className="space-y-6">
         {/* Ingreso Familiar */}
         <div className="space-y-2">
-          <Label htmlFor="ingresoFamiliar">Ingreso Familiar Mensual *</Label>
+          <Label htmlFor="ingresoFamiliar">
+            Ingreso Familiar Mensual <span className="text-red-600">*</span>
+          </Label>
           <Input
             id="ingresoFamiliar"
             value={data.ingresoFamiliar || ""}
-            onChange={(e) => handleNumericInput("ingresoFamiliar", e.target.value, 5)}
+            onChange={(e) => handleInputChange("ingresoFamiliar", e.target.value, 5)}
+            onBlur={() => handleBlur("ingresoFamiliar")}
             className={cn(
               "transition-colors",
-              (!data.ingresoFamiliar || errors.ingresoFamiliar)
-                ? "border-[#c0392b] focus:border-[#c0392b]"
-                : data.ingresoFamiliar
+              formState.ingresoFamiliar?.touched
+                ? formState.ingresoFamiliar.error
+                  ? "border-[#c0392b] focus:border-[#c0392b]"
+                  : formState.ingresoFamiliar.valid
                   ? "border-green-500"
                   : ""
+                : ""
             )}
             placeholder="Ingreso en pesos mexicanos"
             maxLength={5}
           />
+          {formState.ingresoFamiliar?.touched && isEmpty(data.ingresoFamiliar) && (
+            <p className="text-xs text-red-600">Campo obligatorio</p>
+          )}
           {errors.ingresoFamiliar && <p className="text-xs text-[#c0392b]">{errors.ingresoFamiliar}</p>}
         </div>
 
         {/* ¿Trabajas? */}
         <div className="space-y-3">
-          <Label>¿Trabajas actualmente? *</Label>
+          <Label>
+            ¿Trabajas actualmente? <span className="text-red-600">*</span>
+          </Label>
           <RadioGroup
             value={data.trabajas || ""}
-            onValueChange={(value) => onChange({ ...data, trabajas: value })}
+            onValueChange={(value) => {
+              onChange({ ...data, trabajas: value })
+              updateFieldState("trabajas", value, { ...data, trabajas: value })
+            }}
+            onBlur={() => handleBlur("trabajas")}
             className="flex gap-6"
           >
             <div className="flex items-center space-x-2">
@@ -114,6 +225,9 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
               <Label htmlFor="trabajas-no">No</Label>
             </div>
           </RadioGroup>
+          {formState.trabajas?.touched && isEmpty(data.trabajas) && (
+            <p className="text-xs text-red-600">Campo obligatorio</p>
+          )}
         </div>
 
         {/* Información laboral (solo si trabaja) */}
@@ -150,62 +264,86 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
             {/* Teléfono */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="lada">Lada *</Label>
+                <Label htmlFor="lada">
+                  Lada <span className="text-red-600">*</span>
+                </Label>
                 <Input
                   id="lada"
                   value={data.lada || ""}
-                  onChange={(e) => handleNumericInput("lada", e.target.value, 3)}
+                  onChange={(e) => handleInputChange("lada", e.target.value, 3)}
+                  onBlur={() => handleBlur("lada")}
                   className={cn(
                     "transition-colors",
-                    (!data.lada || errors.lada)
-                      ? "border-[#c0392b] focus:border-[#c0392b]"
-                      : data.lada && data.lada.length === 3
+                    formState.lada?.touched
+                      ? formState.lada.error
+                        ? "border-[#c0392b] focus:border-[#c0392b]"
+                        : formState.lada.valid
                         ? "border-green-500"
                         : ""
+                      : ""
                   )}
                   placeholder="777"
                   maxLength={3}
                 />
+                {formState.lada?.touched && isEmpty(data.lada) && (
+                  <p className="text-xs text-red-600">Campo obligatorio</p>
+                )}
                 {errors.lada && <p className="text-xs text-[#c0392b]">{errors.lada}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="telefono">Teléfono *</Label>
+                <Label htmlFor="telefono">
+                  Teléfono <span className="text-red-600">*</span>
+                </Label>
                 <Input
                   id="telefono"
                   value={data.telefono || ""}
-                  onChange={(e) => handleNumericInput("telefono", e.target.value, 7)}
+                  onChange={(e) => handleInputChange("telefono", e.target.value, 7)}
+                  onBlur={() => handleBlur("telefono")}
                   className={cn(
                     "transition-colors",
-                    (!data.telefono || errors.telefono)
-                      ? "border-[#c0392b] focus:border-[#c0392b]"
-                      : data.telefono && data.telefono.length === 7
+                    formState.telefono?.touched
+                      ? formState.telefono.error
+                        ? "border-[#c0392b] focus:border-[#c0392b]"
+                        : formState.telefono.valid
                         ? "border-green-500"
                         : ""
+                      : ""
                   )}
                   placeholder="1234567"
                   maxLength={7}
                 />
+                {formState.telefono?.touched && isEmpty(data.telefono) && (
+                  <p className="text-xs text-red-600">Campo obligatorio</p>
+                )}
                 {errors.telefono && <p className="text-xs text-[#c0392b]">{errors.telefono}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="ingresoMensual">Ingreso Mensual *</Label>
+                <Label htmlFor="ingresoMensual">
+                  Ingreso Mensual <span className="text-red-600">*</span>
+                </Label>
                 <Input
                   id="ingresoMensual"
                   value={data.ingresoMensual || ""}
-                  onChange={(e) => handleNumericInput("ingresoMensual", e.target.value, 5)}
+                  onChange={(e) => handleInputChange("ingresoMensual", e.target.value, 5)}
+                  onBlur={() => handleBlur("ingresoMensual")}
                   className={cn(
                     "transition-colors",
-                    (!data.ingresoMensual || errors.ingresoMensual)
-                      ? "border-[#c0392b] focus:border-[#c0392b]"
-                      : data.ingresoMensual
+                    formState.ingresoMensual?.touched
+                      ? formState.ingresoMensual.error
+                        ? "border-[#c0392b] focus:border-[#c0392b]"
+                        : formState.ingresoMensual.valid
                         ? "border-green-500"
                         : ""
+                      : ""
                   )}
                   placeholder="Pesos mexicanos"
                   maxLength={5}
                 />
+                {formState.ingresoMensual?.touched && isEmpty(data.ingresoMensual) && (
+                  <p className="text-xs text-red-600">Campo obligatorio</p>
+                )}
                 {errors.ingresoMensual && <p className="text-xs text-[#c0392b]">{errors.ingresoMensual}</p>}
               </div>
             </div>
@@ -213,59 +351,96 @@ export default function IngresosComponent({ data, onChange }: IngresosProps) {
             {/* Empresa y puesto */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nombreEmpresa">Nombre de la Empresa *</Label>
+                <Label htmlFor="nombreEmpresa">
+                  Nombre de la Empresa <span className="text-red-600">*</span>
+                </Label>
                 <Input
                   id="nombreEmpresa"
                   value={data.nombreEmpresa || ""}
-                  onChange={(e) => validateField("nombreEmpresa", e.target.value)}
+                  onChange={(e) => {
+                    onChange({ ...data, nombreEmpresa: e.target.value })
+                    updateFieldState("nombreEmpresa", e.target.value, { ...data, nombreEmpresa: e.target.value })
+                  }}
+                  onBlur={() => handleBlur("nombreEmpresa")}
                   className={cn(
                     "transition-colors",
-                    (!data.nombreEmpresa || errors.nombreEmpresa)
-                      ? "border-[#c0392b] focus:border-[#c0392b]"
-                      : data.nombreEmpresa && data.nombreEmpresa.length >= 5
+                    formState.nombreEmpresa?.touched
+                      ? formState.nombreEmpresa.error
+                        ? "border-[#c0392b] focus:border-[#c0392b]"
+                        : formState.nombreEmpresa.valid
                         ? "border-green-500"
                         : ""
+                      : ""
                   )}
                   placeholder="Nombre de la empresa"
                   maxLength={50}
                 />
+                {formState.nombreEmpresa?.touched && isEmpty(data.nombreEmpresa) && (
+                  <p className="text-xs text-red-600">Campo obligatorio</p>
+                )}
                 {errors.nombreEmpresa && <p className="text-xs text-[#c0392b]">{errors.nombreEmpresa}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="puesto">Puesto *</Label>
+                <Label htmlFor="puesto">
+                  Puesto <span className="text-red-600">*</span>
+                </Label>
                 <Input
                   id="puesto"
                   value={data.puesto || ""}
-                  onChange={(e) => validateField("puesto", e.target.value)}
+                  onChange={(e) => {
+                    onChange({ ...data, puesto: e.target.value })
+                    updateFieldState("puesto", e.target.value, { ...data, puesto: e.target.value })
+                  }}
+                  onBlur={() => handleBlur("puesto")}
                   className={cn(
                     "transition-colors",
-                    (!data.puesto || errors.puesto)
-                      ? "border-[#c0392b] focus:border-[#c0392b]"
-                      : data.puesto
+                    formState.puesto?.touched
+                      ? formState.puesto.error
+                        ? "border-[#c0392b] focus:border-[#c0392b]"
+                        : formState.puesto.valid
                         ? "border-green-500"
                         : ""
+                      : ""
                   )}
                   placeholder="Tu puesto de trabajo"
                   maxLength={50}
                 />
+                {formState.puesto?.touched && isEmpty(data.puesto) && (
+                  <p className="text-xs text-red-600">Campo obligatorio</p>
+                )}
                 {errors.puesto && <p className="text-xs text-[#c0392b]">{errors.puesto}</p>}
               </div>
             </div>
 
             {/* Horario */}
             <div className="space-y-2">
-              <Label htmlFor="horario">Horario de Trabajo *</Label>
+              <Label htmlFor="horario">
+                Horario de Trabajo <span className="text-red-600">*</span>
+              </Label>
               <Input
                 id="horario"
                 value={data.horario || ""}
-                onChange={(e) => onChange({ ...data, horario: e.target.value })}
+                onChange={(e) => {
+                  onChange({ ...data, horario: e.target.value })
+                  updateFieldState("horario", e.target.value, { ...data, horario: e.target.value })
+                }}
+                onBlur={() => handleBlur("horario")}
                 className={cn(
                   "transition-colors",
-                  !data.horario ? "border-[#c0392b] focus:border-[#c0392b]" : "border-green-500"
+                  formState.horario?.touched
+                    ? formState.horario.error
+                      ? "border-[#c0392b] focus:border-[#c0392b]"
+                      : formState.horario.valid
+                      ? "border-green-500"
+                      : ""
+                    : ""
                 )}
                 placeholder="Ej: 7:00 - 15:00"
               />
+              {formState.horario?.touched && isEmpty(data.horario) && (
+                <p className="text-xs text-red-600">Campo obligatorio</p>
+              )}
               <p className="text-xs text-[#888888]">Formato sugerido: HH:MM - HH:MM</p>
             </div>
           </div>

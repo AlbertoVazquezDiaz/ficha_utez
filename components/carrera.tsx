@@ -29,13 +29,11 @@ export default function CarreraComponent({
 
   useEffect(() => {
     const controller = new AbortController();
-
     fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/school-careers`, {
       signal: controller.signal,
     })
       .then((res) => res.json())
       .then((data) => {
-        console.log("Carreras recibidas:", data); // 🐞 Debug
         setCarreras(Array.isArray(data.data) ? data.data : []);
       })
       .catch((err) => {
@@ -98,7 +96,7 @@ export default function CarreraComponent({
             <SelectContent>
               {carreras.length > 0 ? (
                 carreras.map((carrera) => (
-                  <SelectItem key={carrera.id} value={carrera.name}>
+                  <SelectItem key={carrera.id} value={carrera.id}>
                     {carrera.name}
                   </SelectItem>
                 ))
@@ -138,7 +136,7 @@ export default function CarreraComponent({
             <SelectContent>
               {mediosDifusion.length > 0 ? (
                 mediosDifusion.map((medio) => (
-                  <SelectItem key={medio.id} value={medio.name}>
+                  <SelectItem key={medio.id} value={medio.id}>
                     {medio.name}
                   </SelectItem>
                 ))
